@@ -1,0 +1,112 @@
+name: Deploy to Production
+
+# This is a template - rename to deploy.yml and configure for your platform
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Option 1: Deploy to Google Cloud Run
+  deploy-cloud-run:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    if: false  # Set to true to enable
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+    - name: Deploy to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: magistra
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        region: europe-west1
+        env_vars: |
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+        secrets: |
+          DATABASE_URL=magistra-db-url:latest
+
+  # Option 2: Deploy to DigitalOcean App Platform
+  deploy-digitalocean:
+    name: Deploy to DigitalOcean
+    runs-on: ubuntu-latest
+    if: false  # Set to true to enable
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+    - name: Deploy to App Platform
+      run: |
+        doctl apps create-deployment ${{ secrets.APP_ID }} --wait
+
+  # Option 3: Deploy to AWS ECS
+  deploy-aws-ecs:
+    name: Deploy to AWS ECS
+    runs-on: ubuntu-latest
+    if: false  # Set to true to enable
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-west-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: magistra
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Deploy to ECS
+      run: |
+        aws ecs update-service --cluster magistra-cluster --service magistra-service --force-new-deployment
+
+  # Option 4: Deploy to VPS via SSH
+  deploy-vps:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    if: false  # Set to true to enable
+
+    steps:
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_SSH_KEY }}
+        script: |
+          cd /opt/magistra
+          git pull origin main
+          docker-compose pull
+          docker-compose up -d --force-recreate
+          docker system prune -af

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Oefening - {{ word_list.name }}{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <div class="quiz-header">
+        <h2>{{ word_list.name }}</h2>
+        <p class="progress">Vraag {{ progress }}</p>
+    </div>
+
+    <div class="quiz-question">
+        <p class="question-label">Wat is de {{ word_list.target_language }} vertaling van:</p>
+        <h3 class="source-word">{{ word.source_word }}</h3>
+    </div>
+
+    <form method="POST" action="{{ url_for('main.quiz_answer', list_id=word_list.id) }}" class="quiz-form">
+        <input type="hidden" name="word_id" value="{{ word.id }}">
+        <div class="form-group">
+            <input type="text" name="answer" id="answer" required autofocus autocomplete="off" placeholder="Type je antwoord...">
+        </div>
+        <button type="submit" class="btn btn-primary btn-large">Controleer</button>
+    </form>
+
+    <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary">Stop Oefening</a>
+</div>
+{% endblock %}

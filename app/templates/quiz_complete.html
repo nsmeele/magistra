@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Resultaat - {{ word_list.name }}{% endblock %}
+
+{% block content %}
+<div class="quiz-complete">
+    <h2>Oefening Voltooid!</h2>
+
+    <div class="score-display">
+        <p class="score-text">Je score:</p>
+        <p class="score-number">{{ score }} / {{ total }}</p>
+        <p class="score-percentage">{{ "%.0f"|format((score / total * 100) if total > 0 else 0) }}%</p>
+    </div>
+
+    {% if score == total %}
+        <p class="congratulations">Perfect! Alle woorden goed! 🎉</p>
+    {% elif score / total >= 0.8 %}
+        <p class="congratulations">Goed gedaan! 👏</p>
+    {% elif score / total >= 0.5 %}
+        <p class="encouragement">Nog even oefenen! 💪</p>
+    {% else %}
+        <p class="encouragement">Blijf oefenen, het komt goed! 📚</p>
+    {% endif %}
+
+    <div class="quiz-actions">
+        <a href="{{ url_for('main.quiz', list_id=word_list.id) }}" class="btn btn-primary">Nog een keer</a>
+        <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary">Terug naar lijst</a>
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Naar overzicht</a>
+    </div>
+</div>
+{% endblock %}

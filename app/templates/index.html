@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Mijn Lijsten - Magistra{% endblock %}
+
+{% block content %}
+<h2>Mijn Woordenlijsten</h2>
+
+{% if lists %}
+    <div class="lists-grid">
+        {% for list in lists %}
+            <div class="list-card">
+                <h3><a href="{{ url_for('main.list_detail', list_id=list.id) }}">{{ list.name }}</a></h3>
+                <p class="languages">{{ list.source_language }} → {{ list.target_language }}</p>
+                <p class="word-count">{{ list.words|length }} woord{% if list.words|length != 1 %}en{% endif %}</p>
+                <div class="card-actions">
+                    <a href="{{ url_for('main.list_detail', list_id=list.id) }}" class="btn btn-secondary">Bekijken</a>
+                    {% if list.words %}
+                        <a href="{{ url_for('main.quiz', list_id=list.id) }}" class="btn btn-primary">Oefenen</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="empty-state">Je hebt nog geen woordenlijsten. <a href="{{ url_for('main.new_list') }}">Maak je eerste lijst aan!</a></p>
+{% endif %}
+{% endblock %}
