@@ -227,6 +227,13 @@ class QuizStartView(MethodView):
             direction = form.direction.data
             try:
                 quiz_data = self.quiz_service.initialize_quiz(list_id, direction)
+                quiz_data["direction"] = direction  # Store direction for history
+                quiz_data["quiz_answers"] = []  # Track all answers
+
+                # Create quiz session in database
+                quiz_session = self.quiz_service.create_or_update_session(quiz_data)
+                quiz_data["quiz_session_id"] = quiz_session.id
+
                 session.update(quiz_data)
                 return redirect(url_for("main.quiz", list_id=list_id))
             except ValueError as e:
@@ -262,11 +269,33 @@ class QuizView(MethodView):
         # Check if quiz is complete
         if self.quiz_service.is_quiz_complete(session):
             results = self.quiz_service.get_quiz_results(session)
+
+            # Mark session as complete
+            quiz_session_id = session.get("quiz_session_id")
+            if quiz_session_id:
+                try:
+                    self.quiz_service.complete_quiz_session(
+                        quiz_session_id, results["score"]
+                    )
+                except Exception as e:
+                    print(f"Error completing quiz session: {e}")
+            else:
+                # Fallback: save legacy way if no session ID
+                quiz_answers = session.get("quiz_answers", [])
+                if quiz_answers:
+                    try:
+                        self.quiz_service.save_quiz_session(dict(session), quiz_answers)
+                    except Exception as e:
+                        print(f"Error saving quiz session: {e}")
+
             # Clear session
             session.pop("quiz_questions", None)
             session.pop("quiz_list_id", None)
             session.pop("quiz_index", None)
             session.pop("quiz_score", None)
+            session.pop("quiz_answers", None)
+            session.pop("direction", None)
+            session.pop("quiz_session_id", None)
             return render_template(
                 "quiz_complete.html",
                 score=results["score"],
@@ -345,9 +374,38 @@ class QuizAnswerView(MethodView):
                         "error",
                     )
 
-                # Advance quiz
+                # Track answer for history
+                answer_data = {
+                    "entry_id": entry_id,
+                    "user_answer": user_answer,
+                    "correct_answer": correct_answer,
+                    "is_correct": is_correct,
+                    "direction": direction
+                }
+
+                # Save answer to database if we have a session ID
+                quiz_session_id = session.get("quiz_session_id")
+                if quiz_session_id:
+                    try:
+                        self.quiz_service.save_quiz_answer(quiz_session_id, answer_data)
+                    except Exception as e:
+                        print(f"Error saving answer: {e}")
+
+                # Also keep in session for legacy/fallback
+                quiz_answers = session.get("quiz_answers", [])
+                quiz_answers.append(answer_data)
+                session["quiz_answers"] = quiz_answers
+
+                # Advance quiz and update session in DB
                 quiz_data = self.quiz_service.advance_quiz(dict(session), is_correct)
                 session.update(quiz_data)
+
+                # Update quiz session progress
+                if quiz_session_id:
+                    try:
+                        self.quiz_service.create_or_update_session(dict(session), quiz_session_id)
+                    except Exception as e:
+                        print(f"Error updating session: {e}")
 
             except ValueError as e:
                 flash(str(e), "error")
@@ -397,6 +455,13 @@ class MixedQuizStartView(MethodView):
             quiz_data = self.quiz_service.initialize_mixed_quiz(
                 selected_list_ids, direction
             )
+            quiz_data["direction"] = direction  # Store direction for history
+            quiz_data["quiz_answers"] = []  # Track all answers
+
+            # Create quiz session in database
+            quiz_session = self.quiz_service.create_or_update_session(quiz_data)
+            quiz_data["quiz_session_id"] = quiz_session.id
+
             session.update(quiz_data)
             flash(f"Quiz gestart met {len(selected_list_ids)} lijst(en)!", "success")
             return redirect(url_for("main.mixed_quiz_question"))
@@ -423,6 +488,25 @@ class MixedQuizQuestionView(MethodView):
         if self.quiz_service.is_quiz_complete(session):
             results = self.quiz_service.get_quiz_results(session)
             list_names = session.get("quiz_list_names", [])
+
+            # Mark session as complete
+            quiz_session_id = session.get("quiz_session_id")
+            if quiz_session_id:
+                try:
+                    self.quiz_service.complete_quiz_session(
+                        quiz_session_id, results["score"]
+                    )
+                except Exception as e:
+                    print(f"Error completing quiz session: {e}")
+            else:
+                # Fallback: save legacy way if no session ID
+                quiz_answers = session.get("quiz_answers", [])
+                if quiz_answers:
+                    try:
+                        self.quiz_service.save_quiz_session(dict(session), quiz_answers)
+                    except Exception as e:
+                        print(f"Error saving quiz session: {e}")
+
             # Clear session
             session.pop("quiz_questions", None)
             session.pop("quiz_list_ids", None)
@@ -431,6 +515,9 @@ class MixedQuizQuestionView(MethodView):
             session.pop("quiz_target_language", None)
             session.pop("quiz_index", None)
             session.pop("quiz_score", None)
+            session.pop("quiz_answers", None)
+            session.pop("direction", None)
+            session.pop("quiz_session_id", None)
             return render_template(
                 "mixed_quiz_complete.html",
                 score=results["score"],
@@ -508,11 +595,195 @@ class MixedQuizAnswerView(MethodView):
                         "error",
                     )
 
-                # Advance quiz
+                # Track answer for history
+                answer_data = {
+                    "entry_id": entry_id,
+                    "user_answer": user_answer,
+                    "correct_answer": correct_answer,
+                    "is_correct": is_correct,
+                    "direction": direction
+                }
+
+                # Save answer to database if we have a session ID
+                quiz_session_id = session.get("quiz_session_id")
+                if quiz_session_id:
+                    try:
+                        self.quiz_service.save_quiz_answer(quiz_session_id, answer_data)
+                    except Exception as e:
+                        print(f"Error saving answer: {e}")
+
+                # Also keep in session for legacy/fallback
+                quiz_answers = session.get("quiz_answers", [])
+                quiz_answers.append(answer_data)
+                session["quiz_answers"] = quiz_answers
+
+                # Advance quiz and update session in DB
                 quiz_data = self.quiz_service.advance_quiz(dict(session), is_correct)
                 session.update(quiz_data)
+
+                # Update quiz session progress
+                if quiz_session_id:
+                    try:
+                        self.quiz_service.create_or_update_session(dict(session), quiz_session_id)
+                    except Exception as e:
+                        print(f"Error updating session: {e}")
 
             except ValueError as e:
                 flash(str(e), "error")
 
         return redirect(url_for("main.mixed_quiz_question"))
+
+
+class QuizHistoryView(MethodView):
+    """View for quiz history listing"""
+
+    def __init__(self):
+        self.quiz_service = QuizService()
+
+    def get(self):
+        """Display quiz history with trends"""
+        sessions = self.quiz_service.get_quiz_history()
+        incomplete_sessions = self.quiz_service.get_incomplete_sessions()
+        return render_template(
+            "quiz_history.html",
+            sessions=sessions,
+            incomplete_sessions=incomplete_sessions
+        )
+
+
+class QuizHistoryDetailView(MethodView):
+    """View for detailed quiz session review"""
+
+    def __init__(self):
+        self.quiz_service = QuizService()
+
+    def get(self, session_id):
+        """Display detailed quiz session with all answers"""
+        quiz_session = self.quiz_service.get_quiz_session_detail(session_id)
+        if not quiz_session:
+            flash("Quiz sessie niet gevonden", "error")
+            return redirect(url_for("main.quiz_history"))
+
+        return render_template("quiz_history_detail.html", quiz_session=quiz_session)
+
+
+class ResumeQuizView(MethodView):
+    """View for resuming an incomplete quiz"""
+
+    def __init__(self):
+        self.quiz_service = QuizService()
+
+    def get(self, session_id):
+        """Resume a quiz session"""
+        quiz_session = self.quiz_service.get_quiz_session_detail(session_id)
+
+        if not quiz_session:
+            flash("Quiz sessie niet gevonden", "error")
+            return redirect(url_for("main.quiz_history"))
+
+        if quiz_session.status != 'in_progress':
+            flash("Deze quiz is al voltooid", "info")
+            return redirect(url_for("main.quiz_history_detail", session_id=session_id))
+
+        # Restore quiz state from database
+        if not quiz_session.quiz_data:
+            flash("Kan quiz niet hervatten: geen opgeslagen data", "error")
+            return redirect(url_for("main.quiz_history"))
+
+        # Load quiz data into session
+        session.update(quiz_session.quiz_data)
+        session["quiz_session_id"] = quiz_session.id
+
+        # Determine redirect based on quiz type
+        if quiz_session.quiz_type == "mixed":
+            flash("Quiz hervat!", "success")
+            return redirect(url_for("main.mixed_quiz_question"))
+        else:
+            # Get list_id from session_lists
+            if quiz_session.session_lists:
+                list_id = quiz_session.session_lists[0].list_id
+                flash("Quiz hervat!", "success")
+                return redirect(url_for("main.quiz", list_id=list_id))
+
+        flash("Kan quiz niet hervatten", "error")
+        return redirect(url_for("main.quiz_history"))
+
+
+class SmartPracticeView(MethodView):
+    """View for smart practice quiz with difficult words"""
+
+    def __init__(self):
+        self.quiz_service = QuizService()
+        self.list_service = ListService()
+
+    def get(self, list_id=None):
+        """Display smart practice start page"""
+        difficult_entries = self.quiz_service.get_difficult_entries(
+            list_id=list_id, limit=15
+        )
+
+        if not difficult_entries:
+            flash("Geen moeilijke woorden gevonden. Oefen eerst wat meer!", "info")
+            if list_id:
+                return redirect(url_for("main.list_detail", list_id=list_id))
+            return redirect(url_for("main.index"))
+
+        # Get the list if specific
+        word_list = None
+        if list_id:
+            word_list = self.list_service.get_list_by_id(list_id)
+
+        return render_template(
+            "smart_practice.html",
+            entries=difficult_entries,
+            word_list=word_list,
+        )
+
+    def post(self, list_id=None):
+        """Start smart practice quiz"""
+        difficult_entries = self.quiz_service.get_difficult_entries(
+            list_id=list_id, limit=15
+        )
+
+        if not difficult_entries:
+            flash("Geen moeilijke woorden gevonden.", "error")
+            return redirect(url_for("main.index"))
+
+        # Create quiz questions from difficult entries
+        direction = request.form.get("direction", "random")
+        quiz_questions = []
+        for entry in difficult_entries:
+            if direction == "random":
+                entry_direction = "forward" if entry.success_rate and entry.success_rate < 50 else "reverse"
+            else:
+                entry_direction = direction
+            quiz_questions.append({"entry_id": entry.id, "direction": entry_direction})
+
+        # Shuffle for variety
+        import random
+        random.shuffle(quiz_questions)
+
+        # Store in session
+        quiz_data = {
+            "quiz_questions": quiz_questions,
+            "quiz_index": 0,
+            "quiz_score": 0,
+            "quiz_answers": [],
+            "direction": direction,
+        }
+
+        if list_id:
+            quiz_data["quiz_list_id"] = list_id
+            session.update(quiz_data)
+            flash("Smart practice quiz gestart!", "success")
+            return redirect(url_for("main.quiz", list_id=list_id))
+        else:
+            # Mixed quiz mode for smart practice across all lists
+            list_ids = list(set(entry.list_id for entry in difficult_entries))
+            quiz_data["quiz_list_ids"] = list_ids
+            quiz_data["quiz_list_names"] = [
+                self.list_service.get_list_by_id(lid).name for lid in list_ids
+            ]
+            session.update(quiz_data)
+            flash("Smart practice quiz gestart!", "success")
+            return redirect(url_for("main.mixed_quiz_question"))

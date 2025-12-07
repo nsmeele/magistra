@@ -4,7 +4,8 @@ from app.views import (AddEntryView, DeleteEntryView, DeleteListView,
                        EditEntryView, EditListView, IndexView, ListDetailView,
                        MixedQuizAnswerView, MixedQuizQuestionView,
                        MixedQuizStartView, MixedQuizView, NewListView,
-                       QuizAnswerView, QuizStartView, QuizView)
+                       QuizAnswerView, QuizHistoryDetailView, QuizHistoryView,
+                       QuizStartView, QuizView, ResumeQuizView, SmartPracticeView)
 
 # Create Blueprint
 bp = Blueprint("main", __name__)
@@ -57,4 +58,27 @@ bp.add_url_rule(
     "/quiz/mixed/answer",
     view_func=MixedQuizAnswerView.as_view("mixed_quiz_answer"),
     methods=["POST"],
+)
+
+# Quiz history routes
+bp.add_url_rule("/quiz/history", view_func=QuizHistoryView.as_view("quiz_history"))
+bp.add_url_rule(
+    "/quiz/history/<int:session_id>",
+    view_func=QuizHistoryDetailView.as_view("quiz_history_detail"),
+)
+bp.add_url_rule(
+    "/quiz/resume/<int:session_id>",
+    view_func=ResumeQuizView.as_view("resume_quiz"),
+)
+
+# Smart practice routes
+bp.add_url_rule(
+    "/quiz/practice",
+    view_func=SmartPracticeView.as_view("smart_practice"),
+    methods=["GET", "POST"],
+)
+bp.add_url_rule(
+    "/list/<int:list_id>/practice",
+    view_func=SmartPracticeView.as_view("smart_practice_list"),
+    methods=["GET", "POST"],
 )

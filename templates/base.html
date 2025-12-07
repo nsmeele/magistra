@@ -12,7 +12,11 @@
 <body>
     <nav>
         <div class="container">
-            <a class="font-bold" href="{{ url_for('main.index') }}">MAGISTRA</a>
+            <div class="nav-left">
+                <a class="font-bold" href="{{ url_for('main.index') }}">MAGISTRA</a>
+                <a href="{{ url_for('main.quiz_history') }}" class="nav-link"><i class="fas fa-history"></i> Geschiedenis</a>
+                <a href="{{ url_for('main.smart_practice') }}" class="nav-link"><i class="fas fa-brain"></i> Smart Practice</a>
+            </div>
             <a href="{{ url_for('main.new_list') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nieuwe Lijst</a>
         </div>
     </nav>

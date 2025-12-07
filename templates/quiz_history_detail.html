@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Details - Magistra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Quiz Details</h2>
+    <a href="{{ url_for('main.quiz_history') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Terug naar geschiedenis
+    </a>
+</div>
+
+<div class="quiz-summary">
+    <div class="summary-header">
+        <div>
+            <h3>
+                {% if quiz_session.quiz_type == 'single' %}
+                    {% if quiz_session.session_lists %}
+                        {{ quiz_session.session_lists[0].list.name }}
+                    {% else %}
+                        Enkele Quiz
+                    {% endif %}
+                {% else %}
+                    Gemengde Quiz
+                {% endif %}
+            </h3>
+            <p class="quiz-date">{{ quiz_session.completed_at.strftime('%d %b %Y, %H:%M') }}</p>
+        </div>
+        <div class="summary-score {% if quiz_session.score_percentage >= 80 %}score-excellent{% elif quiz_session.score_percentage >= 60 %}score-good{% else %}score-needs-work{% endif %}">
+            <span class="score-number">{{ quiz_session.correct_answers }}/{{ quiz_session.total_questions }}</span>
+            <span class="score-percentage">{{ quiz_session.score_percentage }}%</span>
+        </div>
+    </div>
+
+    <div class="quiz-meta">
+        <div class="meta-item">
+            <strong>Type:</strong> {{ quiz_session.quiz_type|capitalize }}
+        </div>
+        <div class="meta-item">
+            <strong>Richting:</strong> {{ quiz_session.direction|upper }}
+        </div>
+        {% if quiz_session.quiz_type == 'mixed' and quiz_session.session_lists %}
+            <div class="meta-item">
+                <strong>Lijsten:</strong>
+                {% for sl in quiz_session.session_lists %}
+                    <a href="{{ url_for('main.list_detail', list_id=sl.list.id) }}">{{ sl.list.name }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="answers-section">
+    <h3>Alle Antwoorden</h3>
+
+    <div class="answers-filter">
+        <button class="filter-btn active" data-filter="all">Alles ({{ quiz_session.answers|length }})</button>
+        <button class="filter-btn" data-filter="correct">Goed ({{ quiz_session.answers|selectattr('is_correct')|list|length }})</button>
+        <button class="filter-btn" data-filter="incorrect">Fout ({{ quiz_session.answers|rejectattr('is_correct')|list|length }})</button>
+    </div>
+
+    <div class="answers-list">
+        {% for answer in quiz_session.answers %}
+            <div class="answer-card {% if answer.is_correct %}answer-correct{% else %}answer-incorrect{% endif %}" data-correct="{{ answer.is_correct|lower }}">
+                <div class="answer-header">
+                    <div class="answer-question">
+                        {% if answer.question_direction == 'forward' %}
+                            <span class="question-word">{{ answer.entry.source_word }}</span>
+                            <i class="fas fa-arrow-right"></i>
+                        {% else %}
+                            <span class="question-word">{{ answer.entry.target_word }}</span>
+                            <i class="fas fa-arrow-left"></i>
+                        {% endif %}
+                    </div>
+                    <div class="answer-status">
+                        {% if answer.is_correct %}
+                            <i class="fas fa-check-circle"></i>
+                        {% else %}
+                            <i class="fas fa-times-circle"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="answer-content">
+                    <div class="answer-row">
+                        <span class="label">Jouw antwoord:</span>
+                        <span class="value user-answer">{{ answer.user_answer }}</span>
+                    </div>
+                    {% if not answer.is_correct %}
+                        <div class="answer-row">
+                            <span class="label">Correct antwoord:</span>
+                            <span class="value correct-answer">{{ answer.correct_answer }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="answer-meta">
+                    <span class="badge badge-small">{{ answer.question_direction }}</span>
+                    {% if answer.entry %}
+                        <a href="{{ url_for('main.list_detail', list_id=answer.entry.list_id) }}" class="list-link">
+                            {{ answer.entry.list.name }}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+// Filter functionality
+const filterButtons = document.querySelectorAll('.filter-btn');
+const answerCards = document.querySelectorAll('.answer-card');
+
+filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Update active button
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.dataset.filter;
+
+        // Filter cards
+        answerCards.forEach(card => {
+            if (filter === 'all') {
+                card.style.display = 'block';
+            } else if (filter === 'correct') {
+                card.style.display = card.dataset.correct === 'true' ? 'block' : 'none';
+            } else if (filter === 'incorrect') {
+                card.style.display = card.dataset.correct === 'false' ? 'block' : 'none';
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.quiz-summary {
+    background: var(--card-background);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.summary-header h3 {
+    margin: 0 0 0.5rem 0;
+}
+
+.quiz-date {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.summary-score {
+    text-align: right;
+}
+
+.score-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.score-percentage {
+    display: block;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.score-excellent .score-number { color: #4CAF50; }
+.score-good .score-number { color: #FF9800; }
+.score-needs-work .score-number { color: #F44336; }
+
+.quiz-meta {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.meta-item {
+    font-size: 0.95rem;
+}
+
+.meta-item strong {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.answers-section h3 {
+    margin-bottom: 1rem;
+}
+
+.answers-filter {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    background: var(--card-background);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.answers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.answer-card {
+    background: var(--card-background);
+    padding: 1.25rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--border-color);
+}
+
+.answer-card.answer-correct {
+    border-left-color: #4CAF50;
+}
+
+.answer-card.answer-incorrect {
+    border-left-color: #F44336;
+}
+
+.answer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.answer-question {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.question-word {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.answer-status {
+    font-size: 1.5rem;
+}
+
+.answer-correct .answer-status {
+    color: #4CAF50;
+}
+
+.answer-incorrect .answer-status {
+    color: #F44336;
+}
+
+.answer-content {
+    margin-bottom: 1rem;
+}
+
+.answer-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    align-items: baseline;
+}
+
+.answer-row .label {
+    color: var(--text-secondary);
+    min-width: 150px;
+    font-size: 0.9rem;
+}
+
+.answer-row .value {
+    font-size: 1.1rem;
+}
+
+.user-answer {
+    font-weight: 500;
+}
+
+.correct-answer {
+    font-weight: 600;
+    color: #4CAF50;
+}
+
+.answer-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.badge-small {
+    padding: 0.2rem 0.6rem;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.list-link {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.list-link:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

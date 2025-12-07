@@ -2,6 +2,13 @@
 
 @source "./../templates/*.html";
 
+:root {
+    --primary-color: #3b82f6;
+    --card-background: #ffffff;
+    --border-color: #e5e7eb;
+    --text-secondary: #6b7280;
+}
+
 body {
     @apply font-sans leading-normal text-gray-800 bg-gray-100 min-h-screen flex flex-col;
 }
@@ -17,6 +24,18 @@ nav {
 
 nav .container {
     @apply flex justify-between items-center;
+}
+
+nav .nav-left {
+    @apply flex items-center gap-6;
+}
+
+nav .nav-link {
+    @apply text-gray-300 no-underline hover:text-white transition-colors text-sm;
+}
+
+nav .nav-link i {
+    @apply mr-1.5;
 }
 
 /* Main content */

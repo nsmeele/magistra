@@ -24,6 +24,7 @@
 
     <div class="quiz-actions">
         <a href="{{ url_for('main.quiz', list_id=word_list.id) }}" class="btn btn-primary">Nog een keer</a>
+        <a href="{{ url_for('main.quiz_history') }}" class="btn btn-secondary"><i class="fas fa-history"></i> Bekijk Geschiedenis</a>
         <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary">Terug naar lijst</a>
         <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Naar overzicht</a>
     </div>

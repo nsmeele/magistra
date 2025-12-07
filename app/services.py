@@ -1,9 +1,11 @@
 import random
+from datetime import datetime
 from typing import Dict
 from typing import List as ListType
 from typing import Optional, Tuple
 
-from app.models import Entry, List
+from app import db
+from app.models import Entry, List, QuizAnswer, QuizSession, QuizSessionList
 from app.repositories import EntryRepository, ListRepository
 
 
@@ -299,3 +301,237 @@ class QuizService:
             "score": quiz_data.get("quiz_score", 0),
             "total": len(quiz_data.get("quiz_questions", [])),
         }
+
+    def create_or_update_session(
+        self, quiz_data: Dict, session_id: Optional[int] = None
+    ) -> QuizSession:
+        """
+        Create a new quiz session or update existing one (for resume)
+
+        Args:
+            quiz_data: Quiz session data from Flask session
+            session_id: Optional existing session ID to update
+
+        Returns:
+            QuizSession object
+        """
+        is_mixed = "quiz_list_ids" in quiz_data
+        quiz_type = "mixed" if is_mixed else "single"
+        direction = quiz_data.get("direction", "random")
+
+        if session_id:
+            # Update existing session
+            session = QuizSession.query.get(session_id)
+            if session:
+                session.current_index = quiz_data.get("quiz_index", 0)
+                session.correct_answers = quiz_data.get("quiz_score", 0)
+                session.quiz_data = quiz_data
+                db.session.commit()
+                return session
+
+        # Create new session
+        session = QuizSession(
+            quiz_type=quiz_type,
+            direction=direction,
+            total_questions=len(quiz_data.get("quiz_questions", [])),
+            correct_answers=quiz_data.get("quiz_score", 0),
+            current_index=quiz_data.get("quiz_index", 0),
+            status='in_progress',
+            quiz_data=quiz_data,
+        )
+        db.session.add(session)
+        db.session.flush()
+
+        # Link lists to session
+        if is_mixed:
+            list_ids = quiz_data.get("quiz_list_ids", [])
+        else:
+            list_ids = [quiz_data.get("quiz_list_id")]
+
+        for list_id in list_ids:
+            if list_id:
+                session_list = QuizSessionList(session_id=session.id, list_id=list_id)
+                db.session.add(session_list)
+
+        db.session.commit()
+        return session
+
+    def save_quiz_answer(
+        self, session_id: int, answer_data: Dict
+    ) -> QuizAnswer:
+        """
+        Save a single quiz answer to an existing session
+
+        Args:
+            session_id: The quiz session ID
+            answer_data: Dict with entry_id, user_answer, correct_answer, is_correct, direction
+
+        Returns:
+            Created QuizAnswer object
+        """
+        answer = QuizAnswer(
+            session_id=session_id,
+            entry_id=answer_data["entry_id"],
+            user_answer=answer_data["user_answer"],
+            correct_answer=answer_data["correct_answer"],
+            is_correct=answer_data["is_correct"],
+            question_direction=answer_data["direction"],
+        )
+        db.session.add(answer)
+        db.session.commit()
+        return answer
+
+    def complete_quiz_session(
+        self, session_id: int, final_score: int
+    ) -> QuizSession:
+        """
+        Mark a quiz session as completed
+
+        Args:
+            session_id: The quiz session ID
+            final_score: Final correct answers count
+
+        Returns:
+            Updated QuizSession object
+        """
+        session = QuizSession.query.get(session_id)
+        if session:
+            session.status = 'completed'
+            session.completed_at = datetime.utcnow()
+            session.correct_answers = final_score
+
+            # Calculate duration if we have started_at
+            if session.started_at:
+                duration = datetime.utcnow() - session.started_at
+                session.duration_seconds = int(duration.total_seconds())
+
+            db.session.commit()
+        return session
+
+    def save_quiz_session(
+        self, quiz_data: Dict, all_answers: ListType[Dict]
+    ) -> QuizSession:
+        """
+        Save completed quiz session to database (legacy method for backward compatibility)
+
+        Args:
+            quiz_data: Quiz session data from Flask session
+            all_answers: List of answer dicts
+
+        Returns:
+            Created QuizSession object
+        """
+        # Determine quiz type
+        is_mixed = "quiz_list_ids" in quiz_data
+        quiz_type = "mixed" if is_mixed else "single"
+
+        # Get direction from quiz_data
+        direction = quiz_data.get("direction", "random")
+        if direction == "random":
+            directions = set(q.get("direction") for q in quiz_data.get("quiz_questions", []))
+            if len(directions) == 1:
+                direction = directions.pop()
+
+        # Create quiz session as completed
+        session = QuizSession(
+            quiz_type=quiz_type,
+            direction=direction,
+            total_questions=len(quiz_data.get("quiz_questions", [])),
+            correct_answers=quiz_data.get("quiz_score", 0),
+            current_index=len(quiz_data.get("quiz_questions", [])),
+            status='completed',
+            started_at=datetime.utcnow(),
+            completed_at=datetime.utcnow(),
+            quiz_data=quiz_data,
+        )
+        db.session.add(session)
+        db.session.flush()
+
+        # Create quiz answers
+        for answer_data in all_answers:
+            answer = QuizAnswer(
+                session_id=session.id,
+                entry_id=answer_data["entry_id"],
+                user_answer=answer_data["user_answer"],
+                correct_answer=answer_data["correct_answer"],
+                is_correct=answer_data["is_correct"],
+                question_direction=answer_data["direction"],
+            )
+            db.session.add(answer)
+
+        # Link lists to session
+        if is_mixed:
+            list_ids = quiz_data.get("quiz_list_ids", [])
+        else:
+            list_ids = [quiz_data.get("quiz_list_id")]
+
+        for list_id in list_ids:
+            if list_id:
+                session_list = QuizSessionList(session_id=session.id, list_id=list_id)
+                db.session.add(session_list)
+
+        db.session.commit()
+        return session
+
+    def get_quiz_history(
+        self, limit: Optional[int] = None, status: Optional[str] = 'completed'
+    ) -> ListType[QuizSession]:
+        """Get quiz history ordered by completion date (newest first)"""
+        query = QuizSession.query
+        if status:
+            query = query.filter_by(status=status)
+
+        if status == 'completed':
+            query = query.order_by(QuizSession.completed_at.desc())
+        else:
+            query = query.order_by(QuizSession.started_at.desc())
+
+        if limit:
+            query = query.limit(limit)
+        return query.all()
+
+    def get_incomplete_sessions(self) -> ListType[QuizSession]:
+        """Get all incomplete quiz sessions"""
+        return QuizSession.query.filter_by(status='in_progress').order_by(
+            QuizSession.started_at.desc()
+        ).all()
+
+    def get_quiz_session_detail(self, session_id: int) -> Optional[QuizSession]:
+        """Get detailed quiz session with all answers"""
+        return QuizSession.query.filter_by(id=session_id).first()
+
+    def get_difficult_entries(
+        self, list_id: Optional[int] = None, min_attempts: int = 2, limit: int = 15
+    ) -> ListType[Entry]:
+        """
+        Get entries with low success rate for smart practice
+
+        Args:
+            list_id: Optional filter by specific list
+            min_attempts: Minimum attempts needed to be considered
+            limit: Maximum number of entries to return
+
+        Returns:
+            List of entries ordered by success rate (worst first)
+        """
+        query = Entry.query.filter(
+            (Entry.correct_count + Entry.incorrect_count) >= min_attempts
+        )
+
+        if list_id:
+            query = query.filter_by(list_id=list_id)
+
+        # Order by success rate (calculated as correct / total)
+        # SQLAlchemy expression for success rate
+        total_attempts = Entry.correct_count + Entry.incorrect_count
+        success_rate = Entry.correct_count * 100.0 / total_attempts
+
+        entries = query.all()
+
+        # Sort in Python since we need the property
+        entries_with_rate = [
+            (entry, entry.success_rate or 0) for entry in entries
+        ]
+        entries_with_rate.sort(key=lambda x: x[1])
+
+        return [entry for entry, _ in entries_with_rate[:limit]]
