@@ -128,7 +128,16 @@ flask db migrate -m "Beschrijving van wijziging"
 flask db upgrade
 ```
 
-#### 6. Start de Applicatie
+#### 6. (Optioneel) Seed de Database met Latijnse Werkwoorden
+
+Om snel te beginnen met oefenen, kun je de database vullen met Latijnse werkwoorden:
+
+```bash
+# Seed 12 Latijnse werkwoorden met volledige vervoegingen
+python seed_latin_verbs_extended.py
+```
+
+#### 7. Start de Applicatie
 
 **In PyCharm:** Klik op ▶️ **Run 'Run Magistra'**
 
@@ -177,16 +186,17 @@ magistra/
 │   ├── services.py          # Business logic layer (Services)
 │   ├── views.py             # Presentation layer (Class-based views)
 │   ├── routes.py            # URL routing configuration
-│   ├── forms.py             # WTForms form definitions
-│   └── templates/           # Jinja2 templates
-│       ├── base.html
-│       ├── index.html
-│       ├── list_detail.html
-│       ├── quiz.html
-│       ├── mixed_quiz.html
-│       └── ...
+│   └── forms.py             # WTForms form definitions
+├── templates/               # Jinja2 templates
+│   ├── base.html
+│   ├── index.html
+│   ├── list_detail.html
+│   ├── quiz.html
+│   ├── mixed_quiz.html
+│   └── ...
 ├── assets/                  # Frontend source files (Vite input)
-│   └── main.js              # JavaScript entry point
+│   ├── main.js              # JavaScript entry point
+│   └── style.css            # CSS source
 ├── static/
 │   └── dist/                # Compiled assets (Vite output)
 │       ├── assets/
@@ -200,6 +210,7 @@ magistra/
 ├── vite.config.js           # Vite configuratie
 ├── package.json             # Node.js dependencies
 ├── docker-compose.yml       # Docker services (DB + Vite)
+├── seed_latin_verbs_extended.py  # Database seeder
 └── requirements.txt         # Python dependencies
 ```
 
@@ -227,6 +238,9 @@ docker compose up -d          # Start database
 docker compose down           # Stop database
 docker compose ps             # Check status
 docker compose logs -f db     # Bekijk database logs
+
+# Database seeding
+python seed_latin_verbs_extended.py    # Seed 12 Latijnse werkwoorden (72 vervoegingen)
 ```
 
 ### Flask
