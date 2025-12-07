@@ -88,35 +88,58 @@ class QuizService:
         if not vocab_list.entries:
             raise ValueError("Cannot start quiz: list has no entries")
 
-        # Shuffle entry IDs for random order
-        entry_ids = [e.id for e in vocab_list.entries]
-        random.shuffle(entry_ids)
+        # Create quiz questions with random directions
+        # Each question is a dict with entry_id and direction ('forward' or 'reverse')
+        quiz_questions = []
+        for entry in vocab_list.entries:
+            direction = random.choice(['forward', 'reverse'])
+            quiz_questions.append({
+                'entry_id': entry.id,
+                'direction': direction
+            })
+
+        # Shuffle questions for random order
+        random.shuffle(quiz_questions)
 
         return {
-            'quiz_entries': entry_ids,
+            'quiz_questions': quiz_questions,
             'quiz_list_id': list_id,
             'quiz_index': 0,
             'quiz_score': 0
         }
 
-    def get_current_question(self, quiz_data: Dict) -> Tuple[Optional[Entry], str]:
+    def get_current_question(self, quiz_data: Dict) -> Tuple[Optional[Entry], Dict, str, str]:
         """
         Get the current quiz question
-        Returns: (entry, progress_string) or (None, '') if quiz is complete
+        Returns: (entry, updated_quiz_data, progress_string, direction) or (None, quiz_data, '', '') if quiz is complete
         """
         quiz_index = quiz_data.get('quiz_index', 0)
-        quiz_entries = quiz_data.get('quiz_entries', [])
+        quiz_questions = quiz_data.get('quiz_questions', [])
 
-        if quiz_index >= len(quiz_entries):
-            return None, ''
+        if quiz_index >= len(quiz_questions):
+            return None, quiz_data, '', ''
 
-        entry_id = quiz_entries[quiz_index]
-        entry = self.entry_repo.get_by_id(entry_id)
-        progress = f"{quiz_index + 1}/{len(quiz_entries)}"
+        # Try to find a valid entry, skipping deleted ones
+        while quiz_index < len(quiz_questions):
+            question = quiz_questions[quiz_index]
+            entry_id = question['entry_id']
+            direction = question['direction']
+            entry = self.entry_repo.get_by_id(entry_id)
 
-        return entry, progress
+            if entry:
+                # Found a valid entry
+                # Update quiz_data with the potentially skipped index
+                quiz_data['quiz_index'] = quiz_index
+                progress = f"{quiz_index + 1}/{len(quiz_questions)}"
+                return entry, quiz_data, progress, direction
 
-    def check_answer(self, entry_id: int, user_answer: str) -> Tuple[bool, str]:
+            # Entry was deleted, move to next one
+            quiz_index += 1
+
+        # All remaining entries were deleted
+        return None, quiz_data, '', ''
+
+    def check_answer(self, entry_id: int, user_answer: str, direction: str = 'forward') -> Tuple[bool, str]:
         """
         Check if the user's answer is correct
         Returns: (is_correct, correct_answer)
@@ -125,14 +148,22 @@ class QuizService:
         if not entry:
             raise ValueError(f"Entry with id {entry_id} not found")
 
-        correct_answer = entry.target_word.strip().lower()
+        # Determine the correct answer based on direction
+        if direction == 'forward':
+            # source -> target (original behavior)
+            correct_answer_value = entry.target_word
+        else:
+            # reverse: target -> source
+            correct_answer_value = entry.source_word
+
+        correct_answer = correct_answer_value.strip().lower()
         user_answer_clean = user_answer.strip().lower()
         is_correct = user_answer_clean == correct_answer
 
         # Update entry score
         self.entry_repo.update_score(entry, is_correct)
 
-        return is_correct, entry.target_word
+        return is_correct, correct_answer_value
 
     def advance_quiz(self, quiz_data: Dict, is_correct: bool) -> Dict:
         """
@@ -147,12 +178,12 @@ class QuizService:
     def is_quiz_complete(self, quiz_data: Dict) -> bool:
         """Check if the quiz is complete"""
         quiz_index = quiz_data.get('quiz_index', 0)
-        quiz_entries = quiz_data.get('quiz_entries', [])
-        return quiz_index >= len(quiz_entries)
+        quiz_questions = quiz_data.get('quiz_questions', [])
+        return quiz_index >= len(quiz_questions)
 
     def get_quiz_results(self, quiz_data: Dict) -> Dict:
         """Get the final quiz results"""
         return {
             'score': quiz_data.get('quiz_score', 0),
-            'total': len(quiz_data.get('quiz_entries', []))
+            'total': len(quiz_data.get('quiz_questions', []))
         }

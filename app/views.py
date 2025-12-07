@@ -1,6 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, session
 from flask.views import MethodView
 from app.services import ListService, QuizService
+from app.forms import NewListForm, AddEntryForm, EditEntryForm, DeleteForm, QuizAnswerForm
 
 
 class IndexView(MethodView):
@@ -23,21 +24,26 @@ class NewListView(MethodView):
 
     def get(self):
         """Display the new list form"""
-        return render_template('new_list.html')
+        form = NewListForm()
+        return render_template('new_list.html', form=form)
 
     def post(self):
         """Handle new list creation"""
-        name = request.form.get('name')
-        source_language = request.form.get('source_language')
-        target_language = request.form.get('target_language')
+        form = NewListForm()
 
-        try:
-            word_list = self.list_service.create_list(name, source_language, target_language)
-            flash('Lijst aangemaakt!', 'success')
-            return redirect(url_for('main.list_detail', list_id=word_list.id))
-        except ValueError as e:
-            flash(str(e), 'error')
-            return render_template('new_list.html')
+        if form.validate_on_submit():
+            try:
+                word_list = self.list_service.create_list(
+                    form.name.data,
+                    form.source_language.data,
+                    form.target_language.data
+                )
+                flash('Lijst aangemaakt!', 'success')
+                return redirect(url_for('main.list_detail', list_id=word_list.id))
+            except ValueError as e:
+                flash(str(e), 'error')
+
+        return render_template('new_list.html', form=form)
 
 
 class ListDetailView(MethodView):
@@ -52,7 +58,10 @@ class ListDetailView(MethodView):
         if not word_list:
             flash('Lijst niet gevonden', 'error')
             return redirect(url_for('main.index'))
-        return render_template('list_detail.html', word_list=word_list)
+
+        form = AddEntryForm()
+        delete_form = DeleteForm()
+        return render_template('list_detail.html', word_list=word_list, form=form, delete_form=delete_form)
 
 
 class AddEntryView(MethodView):
@@ -63,15 +72,19 @@ class AddEntryView(MethodView):
 
     def post(self, list_id):
         """Add a new entry to the list"""
-        source_word = request.form.get('source_word')
-        target_word = request.form.get('target_word')
-        entry_type = request.form.get('entry_type', 'word')
+        form = AddEntryForm()
 
-        try:
-            self.list_service.add_entry_to_list(list_id, source_word, target_word, entry_type)
-            flash('Item toegevoegd!', 'success')
-        except ValueError as e:
-            flash(str(e), 'error')
+        if form.validate_on_submit():
+            try:
+                self.list_service.add_entry_to_list(
+                    list_id,
+                    form.source_word.data,
+                    form.target_word.data,
+                    form.entry_type.data
+                )
+                flash('Item toegevoegd!', 'success')
+            except ValueError as e:
+                flash(str(e), 'error')
 
         return redirect(url_for('main.list_detail', list_id=list_id))
 
@@ -90,7 +103,8 @@ class EditEntryView(MethodView):
             return redirect(url_for('main.index'))
 
         word_list = self.list_service.get_list_by_id(entry.list_id)
-        return render_template('edit_entry.html', entry=entry, word_list=word_list)
+        form = EditEntryForm(obj=entry)
+        return render_template('edit_entry.html', entry=entry, word_list=word_list, form=form)
 
     def post(self, entry_id):
         """Update the entry"""
@@ -100,17 +114,23 @@ class EditEntryView(MethodView):
             return redirect(url_for('main.index'))
 
         list_id = entry.list_id
-        source_word = request.form.get('source_word')
-        target_word = request.form.get('target_word')
-        entry_type = request.form.get('entry_type', 'word')
+        form = EditEntryForm()
 
-        try:
-            self.list_service.update_entry(entry_id, source_word, target_word, entry_type)
-            flash('Item bijgewerkt!', 'success')
-        except ValueError as e:
-            flash(str(e), 'error')
+        if form.validate_on_submit():
+            try:
+                self.list_service.update_entry(
+                    entry_id,
+                    form.source_word.data,
+                    form.target_word.data,
+                    form.entry_type.data
+                )
+                flash('Item bijgewerkt!', 'success')
+                return redirect(url_for('main.list_detail', list_id=list_id))
+            except ValueError as e:
+                flash(str(e), 'error')
 
-        return redirect(url_for('main.list_detail', list_id=list_id))
+        word_list = self.list_service.get_list_by_id(list_id)
+        return render_template('edit_entry.html', entry=entry, word_list=word_list, form=form)
 
 
 class DeleteListView(MethodView):
@@ -161,11 +181,17 @@ class QuizView(MethodView):
             flash('Lijst niet gevonden', 'error')
             return redirect(url_for('main.index'))
 
+        # Debug logging
+        print(f"DEBUG: Session before init: quiz_questions={session.get('quiz_questions')}, quiz_list_id={session.get('quiz_list_id')}, quiz_index={session.get('quiz_index')}")
+
         # Initialize quiz if needed
-        if 'quiz_entries' not in session or session.get('quiz_list_id') != list_id:
+        if 'quiz_questions' not in session or session.get('quiz_list_id') != list_id:
+            print(f"DEBUG: Initializing quiz for list_id={list_id}")
             try:
                 quiz_data = self.quiz_service.initialize_quiz(list_id)
+                print(f"DEBUG: Quiz data from initialize: {quiz_data}")
                 session.update(quiz_data)
+                print(f"DEBUG: Session after init: {dict(session)}")
             except ValueError as e:
                 flash(str(e), 'error')
                 return redirect(url_for('main.list_detail', list_id=list_id))
@@ -174,7 +200,7 @@ class QuizView(MethodView):
         if self.quiz_service.is_quiz_complete(session):
             results = self.quiz_service.get_quiz_results(session)
             # Clear session
-            session.pop('quiz_entries', None)
+            session.pop('quiz_questions', None)
             session.pop('quiz_list_id', None)
             session.pop('quiz_index', None)
             session.pop('quiz_score', None)
@@ -184,15 +210,28 @@ class QuizView(MethodView):
                                  word_list=word_list)
 
         # Get current question
-        entry, progress = self.quiz_service.get_current_question(session)
+        print(f"DEBUG: Getting current question with session: {dict(session)}")
+        entry, updated_quiz_data, progress, direction = self.quiz_service.get_current_question(dict(session))
+        print(f"DEBUG: Entry: {entry}, progress: {progress}, direction: {direction}")
         if not entry:
-            flash('Er is een fout opgetreden', 'error')
+            # All entries were deleted or quiz is broken, reinitialize
+            session.pop('quiz_questions', None)
+            session.pop('quiz_list_id', None)
+            session.pop('quiz_index', None)
+            session.pop('quiz_score', None)
+            flash('De quiz kon niet worden geladen. Sommige items zijn mogelijk verwijderd. Probeer opnieuw.', 'error')
             return redirect(url_for('main.list_detail', list_id=list_id))
 
+        # Update session with potentially skipped indices
+        session.update(updated_quiz_data)
+
+        form = QuizAnswerForm()
         return render_template('quiz.html',
                              entry=entry,
                              word_list=word_list,
-                             progress=progress)
+                             progress=progress,
+                             direction=direction,
+                             form=form)
 
 
 class QuizAnswerView(MethodView):
@@ -203,27 +242,34 @@ class QuizAnswerView(MethodView):
 
     def post(self, list_id):
         """Check the user's answer and advance quiz"""
-        entry_id = request.form.get('entry_id', type=int)
-        user_answer = request.form.get('answer', '')
+        form = QuizAnswerForm()
 
-        try:
-            is_correct, correct_answer = self.quiz_service.check_answer(entry_id, user_answer)
+        if form.validate_on_submit():
+            entry_id = request.form.get('entry_id', type=int)
+            direction = request.form.get('direction', 'forward')
+            user_answer = form.answer.data
 
-            # Get source word for flash message
-            from app.repositories import EntryRepository
-            entry_repo = EntryRepository()
-            entry = entry_repo.get_by_id(entry_id)
+            try:
+                is_correct, correct_answer = self.quiz_service.check_answer(entry_id, user_answer, direction)
 
-            if is_correct:
-                flash(f'Correct! {entry.source_word} = {correct_answer}', 'success')
-            else:
-                flash(f'Fout! {entry.source_word} = {correct_answer} (jij antwoordde: {user_answer})', 'error')
+                # Get entry for flash message
+                from app.repositories import EntryRepository
+                entry_repo = EntryRepository()
+                entry = entry_repo.get_by_id(entry_id)
 
-            # Advance quiz
-            quiz_data = self.quiz_service.advance_quiz(dict(session), is_correct)
-            session.update(quiz_data)
+                # Show the question word based on direction
+                question_word = entry.source_word if direction == 'forward' else entry.target_word
 
-        except ValueError as e:
-            flash(str(e), 'error')
+                if is_correct:
+                    flash(f'Correct! {question_word} = {correct_answer}', 'success')
+                else:
+                    flash(f'Fout! {question_word} = {correct_answer} (jij antwoordde: {user_answer})', 'error')
+
+                # Advance quiz
+                quiz_data = self.quiz_service.advance_quiz(dict(session), is_correct)
+                session.update(quiz_data)
+
+            except ValueError as e:
+                flash(str(e), 'error')
 
         return redirect(url_for('main.quiz', list_id=list_id))

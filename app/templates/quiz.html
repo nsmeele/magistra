@@ -10,16 +10,26 @@
     </div>
 
     <div class="quiz-question">
-        <p class="question-label">Wat is de {{ word_list.target_language }} vertaling van:</p>
-        <h3 class="source-word">{{ entry.source_word }}</h3>
+        {% if direction == 'forward' %}
+            <p class="question-label">Wat is de {{ word_list.target_language }} vertaling van:</p>
+            <h3 class="source-word">{{ entry.source_word }}</h3>
+        {% else %}
+            <p class="question-label">Wat is de {{ word_list.source_language }} vertaling van:</p>
+            <h3 class="source-word">{{ entry.target_word }}</h3>
+        {% endif %}
     </div>
 
     <form method="POST" action="{{ url_for('main.quiz_answer', list_id=word_list.id) }}" class="quiz-form">
+        {{ form.hidden_tag() }}
         <input type="hidden" name="entry_id" value="{{ entry.id }}">
+        <input type="hidden" name="direction" value="{{ direction }}">
         <div class="form-group">
-            <input type="text" name="answer" id="answer" required autofocus autocomplete="off" placeholder="Type je antwoord...">
+            {{ form.answer(class="form-control", autofocus=True, autocomplete="off", placeholder="Type je antwoord...") }}
+            {% if form.answer.errors %}
+                <span class="error">{{ form.answer.errors[0] }}</span>
+            {% endif %}
         </div>
-        <button type="submit" class="btn btn-primary btn-large">Controleer</button>
+        {{ form.submit(class="btn btn-primary btn-large") }}
     </form>
 
     <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary">Stop Oefening</a>
