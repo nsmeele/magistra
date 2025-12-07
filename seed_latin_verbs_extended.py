@@ -4,7 +4,9 @@ Seed script for Latin verbs:
 habere (to have), esse (to be), velle (to want),
 scandere (to climb), natare (to swim), ire (to go), currere (to run),
 canere (to sing), saltare (to dance), posse (to be able to/can),
-lavare (to wash), rogare (to ask)
+lavare (to wash), rogare (to ask), amare (to love), videre (to see),
+audire (to hear), dicere (to say), facere (to do/make), venire (to come),
+scribere (to write), legere (to read), dare (to give), capere (to take)
 """
 
 from app import create_app, db
@@ -146,6 +148,116 @@ def seed_extended_latin_verbs():
                     ("rogamus", "we ask"),
                     ("rogatis", "you (plural) ask"),
                     ("rogant", "they ask"),
+                ],
+            },
+            {
+                "name": "amare - to love",
+                "conjugations": [
+                    ("amo", "I love"),
+                    ("amas", "you love"),
+                    ("amat", "he/she/it loves"),
+                    ("amamus", "we love"),
+                    ("amatis", "you (plural) love"),
+                    ("amant", "they love"),
+                ],
+            },
+            {
+                "name": "videre - to see",
+                "conjugations": [
+                    ("video", "I see"),
+                    ("vides", "you see"),
+                    ("videt", "he/she/it sees"),
+                    ("videmus", "we see"),
+                    ("videtis", "you (plural) see"),
+                    ("vident", "they see"),
+                ],
+            },
+            {
+                "name": "audire - to hear",
+                "conjugations": [
+                    ("audio", "I hear"),
+                    ("audis", "you hear"),
+                    ("audit", "he/she/it hears"),
+                    ("audimus", "we hear"),
+                    ("auditis", "you (plural) hear"),
+                    ("audiunt", "they hear"),
+                ],
+            },
+            {
+                "name": "dicere - to say",
+                "conjugations": [
+                    ("dico", "I say"),
+                    ("dicis", "you say"),
+                    ("dicit", "he/she/it says"),
+                    ("dicimus", "we say"),
+                    ("dicitis", "you (plural) say"),
+                    ("dicunt", "they say"),
+                ],
+            },
+            {
+                "name": "facere - to do/make",
+                "conjugations": [
+                    ("facio", "I do/make"),
+                    ("facis", "you do/make"),
+                    ("facit", "he/she/it does/makes"),
+                    ("facimus", "we do/make"),
+                    ("facitis", "you (plural) do/make"),
+                    ("faciunt", "they do/make"),
+                ],
+            },
+            {
+                "name": "venire - to come",
+                "conjugations": [
+                    ("venio", "I come"),
+                    ("venis", "you come"),
+                    ("venit", "he/she/it comes"),
+                    ("venimus", "we come"),
+                    ("venitis", "you (plural) come"),
+                    ("veniunt", "they come"),
+                ],
+            },
+            {
+                "name": "scribere - to write",
+                "conjugations": [
+                    ("scribo", "I write"),
+                    ("scribis", "you write"),
+                    ("scribit", "he/she/it writes"),
+                    ("scribimus", "we write"),
+                    ("scribitis", "you (plural) write"),
+                    ("scribunt", "they write"),
+                ],
+            },
+            {
+                "name": "legere - to read",
+                "conjugations": [
+                    ("lego", "I read"),
+                    ("legis", "you read"),
+                    ("legit", "he/she/it reads"),
+                    ("legimus", "we read"),
+                    ("legitis", "you (plural) read"),
+                    ("legunt", "they read"),
+                ],
+            },
+            {
+                "name": "dare - to give",
+                "conjugations": [
+                    ("do", "I give"),
+                    ("das", "you give"),
+                    ("dat", "he/she/it gives"),
+                    ("damus", "we give"),
+                    ("datis", "you (plural) give"),
+                    ("dant", "they give"),
+                ],
+            },
+            {
+                "name": "capere - to take",
+                "conjugations": [
+                    ("capio", "I take"),
+                    ("capis", "you take"),
+                    ("capit", "he/she/it takes"),
+                    ("capimus", "we take"),
+                    ("capitis", "you (plural) take"),
+                    ("capiunt", "they take"),
                 ],
             },
         ]
