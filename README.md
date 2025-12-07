@@ -9,32 +9,34 @@ Een woordjes overhoring applicatie gebouwd met Flask en PostgreSQL.
 - Oefen met een interactieve quiz
 - Houd scores bij (goed/fout per woord)
 
+## Quick Start
+
+```bash
+# 1. Maak virtual environment en installeer dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Start database
+docker compose up -d
+
+# 3. Run migrations
+flask db upgrade
+
+# 4. Start applicatie
+python run.py
+```
+
+Open **http://localhost:5000** in je browser!
+
 ## Setup Instructies
 
-### Optie 1: Docker (Aanbevolen - Eenvoudigste)
+### Aanbevolen Setup: PyCharm + Docker Database
 
-Met Docker hoef je geen Python, PostgreSQL of dependencies handmatig te installeren:
-
-```bash
-# Start de applicatie (eerste keer duurt iets langer door image build)
-./start.sh
-
-# Ga naar http://localhost:5000 in je browser
-```
-
-**Andere handige commando's:**
-```bash
-./stop.sh      # Stop de applicatie
-./restart.sh   # Herstart de applicatie
-./logs.sh      # Bekijk logs
-```
-
-**Vereisten:**
-- Docker Desktop geïnstalleerd ([download hier](https://www.docker.com/products/docker-desktop))
-
----
-
-### Optie 2: Handmatige Setup
+Deze setup geeft je de beste development ervaring:
+- ✅ Flask draait lokaal (snelle reload, debugger werkt perfect)
+- ✅ PostgreSQL in Docker (geen lokale PostgreSQL installatie nodig)
+- ✅ PyCharm herkent alles automatisch
 
 #### 1. Python Virtual Environment
 
@@ -42,75 +44,119 @@ Met Docker hoef je geen Python, PostgreSQL of dependencies handmatig te installe
 python3 -m venv venv
 source venv/bin/activate  # Op Windows: venv\Scripts\activate
 pip install -r requirements.txt
+pip install -r requirements-dev.txt  # Voor testing en linting
 ```
 
-### 2. PostgreSQL Database
+#### 2. PostgreSQL Database (Docker)
 
-Installeer PostgreSQL als je het nog niet hebt:
+Start de PostgreSQL database met Docker Compose:
+
+```bash
+# Start database (draait op achtergrond)
+docker compose up -d
+
+# Check of database draait
+docker compose ps
+```
+
+**Vereisten:**
+- Docker Desktop geïnstalleerd ([download hier](https://www.docker.com/products/docker-desktop))
+
+**Database credentials** (al geconfigureerd in docker-compose.yml):
+- Database: `magistra`
+- User: `magistra`
+- Password: `magistra`
+- Port: `5432`
+
+#### 3. Environment Configuratie
+
+Een `.env` bestand is al aangemaakt met de juiste configuratie:
+
+```env
+# Flask Configuration
+SECRET_KEY=dev-secret-key-change-in-production
+FLASK_ENV=development
+FLASK_DEBUG=1
+
+# Database Configuration
+DATABASE_URL=postgresql://magistra:magistra@localhost/magistra
+```
+
+Voor productie: verander de `SECRET_KEY`!
+
+#### 4. PyCharm Configuratie
+
+**Python Interpreter instellen:**
+1. Open PyCharm Settings (CMD+, of File → Settings)
+2. Ga naar **Project: magistra → Python Interpreter**
+3. Klik **Add Interpreter → Add Local Interpreter**
+4. Kies **Existing environment**
+5. Selecteer: `venv/bin/python`
+6. Klik **OK**
+
+**Run Configuration maken:**
+1. Klik **Add Configuration** (rechtsboven)
+2. Klik **+** → **Python**
+3. Vul in:
+   - **Name:** `Run Magistra`
+   - **Script path:** `run.py`
+   - **Working directory:** (project root)
+   - **Environment variables:** Vink **Load from .env file** aan
+4. Klik **OK**
+
+Nu kun je de app starten met de ▶️ knop of debuggen met 🐛!
+
+#### 5. Database Migraties
+
+Eerste keer:
+
+```bash
+# Voer migrations uit (creëert de tables)
+flask db upgrade
+```
+
+Later, als je models wijzigt:
+
+```bash
+flask db migrate -m "Beschrijving van wijziging"
+flask db upgrade
+```
+
+#### 6. Start de Applicatie
+
+**In PyCharm:** Klik op ▶️ **Run 'Run Magistra'**
+
+**Of via terminal:**
+```bash
+python run.py
+```
+
+Ga naar **http://localhost:5000** in je browser.
+
+---
+
+### Alternatief: Handmatige PostgreSQL installatie
+
+Wil je geen Docker gebruiken? Je kunt ook PostgreSQL lokaal installeren:
 
 **macOS (met Homebrew):**
 ```bash
 brew install postgresql@15
 brew services start postgresql@15
+createdb magistra
 ```
 
 **Ubuntu/Debian:**
 ```bash
-sudo apt update
 sudo apt install postgresql postgresql-contrib
 sudo systemctl start postgresql
+sudo -u postgres createdb magistra
 ```
 
-**Windows:**
-Download van https://www.postgresql.org/download/windows/
-
-### 3. Database Aanmaken
-
-```bash
-# Start psql als postgres gebruiker
-psql postgres
-
-# In psql console:
-CREATE DATABASE magistra;
-CREATE USER magistra_user WITH PASSWORD 'jouw_wachtwoord';
-GRANT ALL PRIVILEGES ON DATABASE magistra TO magistra_user;
-\q
+Update dan je `.env`:
+```env
+DATABASE_URL=postgresql://jouw_username@localhost/magistra
 ```
-
-### 4. Environment Configuratie
-
-Kopieer `.env.example` naar `.env` en pas aan:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` met je database credentials:
-```
-SECRET_KEY=een-random-secret-key
-DATABASE_URL=postgresql://magistra_user:jouw_wachtwoord@localhost/magistra
-```
-
-### 5. Database Migraties
-
-```bash
-# Initialiseer migraties
-flask db init
-
-# Maak eerste migratie
-flask db migrate -m "Initial migration"
-
-# Voer migratie uit
-flask db upgrade
-```
-
-### 6. Start de Applicatie
-
-```bash
-python run.py
-```
-
-Ga naar http://localhost:5000 in je browser.
 
 ## Project Structuur
 
@@ -155,14 +201,44 @@ magistra/
 4. Type de vertaling en druk op enter
 5. Bekijk je score na afloop
 
+## Handige Commando's
+
+### Database
+```bash
+docker compose up -d          # Start database
+docker compose down           # Stop database
+docker compose ps             # Check status
+docker compose logs -f db     # Bekijk database logs
+```
+
+### Flask
+```bash
+python run.py                 # Start applicatie
+flask db upgrade              # Run migrations
+flask db migrate -m "msg"     # Create migration
+```
+
+### Development Tools
+```bash
+# Code quality
+black .                       # Format code
+isort .                       # Sort imports
+flake8 .                      # Linting
+
+# Testing
+pytest                        # Run tests
+pytest --cov=app              # Run tests met coverage
+pytest -v                     # Verbose output
+```
+
 ## Development
 
 De applicatie gebruikt:
-- Flask voor de webserver
-- PostgreSQL voor data opslag
-- SQLAlchemy als ORM
-- Jinja2 voor templates
-- Flask-Migrate voor database migraties
+- **Flask** voor de webserver
+- **PostgreSQL** voor data opslag (draait in Docker)
+- **SQLAlchemy** als ORM
+- **Jinja2** voor templates (vergelijkbaar met Twig)
+- **Flask-Migrate** voor database migraties
 
 ### OOP Architectuur
 

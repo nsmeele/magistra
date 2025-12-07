@@ -1,6 +1,9 @@
+# Simplified Docker Compose - PostgreSQL only
+# Flask runs locally with PyCharm
 services:
   db:
     image: postgres:15-alpine
+    container_name: magistra_db
     environment:
       POSTGRES_DB: magistra
       POSTGRES_USER: magistra
@@ -14,21 +17,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  web:
-    build: .
-    ports:
-      - "5001:5000"
-    environment:
-      DATABASE_URL: postgresql://magistra:magistra@db/magistra
-      SECRET_KEY: dev-secret-key-change-in-production
-      FLASK_ENV: development
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - .:/app
-    command: python run.py
 
 volumes:
   postgres_data:
