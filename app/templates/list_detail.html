@@ -10,32 +10,31 @@
     </div>
     <div class="header-actions">
         {% if word_list.entries %}
-            <a href="{{ url_for('main.quiz', list_id=word_list.id) }}" class="btn btn-primary">Start Oefening</a>
+            <a href="{{ url_for('main.quiz', list_id=word_list.id) }}" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Oefening</a>
         {% endif %}
         <form method="POST" action="{{ url_for('main.delete_list', list_id=word_list.id) }}" style="display: inline;">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('Weet je zeker dat je deze lijst wilt verwijderen?')">Lijst Verwijderen</button>
+            {{ delete_form.hidden_tag() }}
+            {{ delete_form.submit(class="btn btn-danger", onclick="return confirm('Weet je zeker dat je deze lijst wilt verwijderen?')", value="Lijst Verwijderen") }}
         </form>
     </div>
 </div>
 
 <h3>Woord/Zin Toevoegen</h3>
 <form method="POST" action="{{ url_for('main.add_entry', list_id=word_list.id) }}" class="form inline-form">
+    {{ form.hidden_tag() }}
     <div class="form-group">
-        <label for="entry_type">Type:</label>
-        <select id="entry_type" name="entry_type" required>
-            <option value="word">Woord</option>
-            <option value="sentence">Zin</option>
-        </select>
+        {{ form.entry_type.label }}
+        {{ form.entry_type(class="form-control") }}
     </div>
     <div class="form-group">
         <label for="source_word">{{ word_list.source_language }}:</label>
-        <input type="text" id="source_word" name="source_word" required>
+        {{ form.source_word(class="form-control") }}
     </div>
     <div class="form-group">
         <label for="target_word">{{ word_list.target_language }}:</label>
-        <input type="text" id="target_word" name="target_word" required>
+        {{ form.target_word(class="form-control") }}
     </div>
-    <button type="submit" class="btn btn-primary">Toevoegen</button>
+    {{ form.submit(class="btn btn-primary") }}
 </form>
 
 <h3>Items ({{ word_list.entries|length }})</h3>
@@ -65,9 +64,10 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="btn btn-small btn-secondary">Bewerken</a>
+                        <a href="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="btn btn-small btn-secondary"><i class="fa-solid fa-edit"></i> Bewerken</a>
                         <form method="POST" action="{{ url_for('main.delete_entry', entry_id=entry.id) }}" style="display: inline;">
-                            <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Weet je zeker dat je dit item wilt verwijderen?')">Verwijder</button>
+                            {{ delete_form.hidden_tag() }}
+                            <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Weet je zeker dat je dit item wilt verwijderen?')"><i class="fa-solid fa-trash"></i> Verwijder</button>
                         </form>
                     </td>
                 </tr>

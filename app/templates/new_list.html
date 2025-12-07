@@ -6,23 +6,33 @@
 <h2>Nieuwe Woordenlijst</h2>
 
 <form method="POST" class="form">
+    {{ form.hidden_tag() }}
     <div class="form-group">
-        <label for="name">Naam van de lijst:</label>
-        <input type="text" id="name" name="name" required autofocus>
+        {{ form.name.label }}
+        {{ form.name(class="form-control", autofocus=True) }}
+        {% if form.name.errors %}
+            <span class="error">{{ form.name.errors[0] }}</span>
+        {% endif %}
     </div>
 
     <div class="form-group">
-        <label for="source_language">Van (taal):</label>
-        <input type="text" id="source_language" name="source_language" placeholder="bijv. Nederlands" required>
+        {{ form.source_language.label(text="Van (taal):") }}
+        {{ form.source_language(class="form-control", placeholder="bijv. Nederlands") }}
+        {% if form.source_language.errors %}
+            <span class="error">{{ form.source_language.errors[0] }}</span>
+        {% endif %}
     </div>
 
     <div class="form-group">
-        <label for="target_language">Naar (taal):</label>
-        <input type="text" id="target_language" name="target_language" placeholder="bijv. Engels" required>
+        {{ form.target_language.label(text="Naar (taal):") }}
+        {{ form.target_language(class="form-control", placeholder="bijv. Engels") }}
+        {% if form.target_language.errors %}
+            <span class="error">{{ form.target_language.errors[0] }}</span>
+        {% endif %}
     </div>
 
     <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Lijst Aanmaken</button>
+        {{ form.submit(class="btn btn-primary") }}
         <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Annuleren</a>
     </div>
 </form>

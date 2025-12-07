@@ -8,26 +8,33 @@
     <p class="subtitle">{{ word_list.name }} - {{ word_list.source_language }} → {{ word_list.target_language }}</p>
 
     <form method="POST" action="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="form">
+        {{ form.hidden_tag() }}
         <div class="form-group">
-            <label for="entry_type">Type:</label>
-            <select id="entry_type" name="entry_type" required>
-                <option value="word" {% if entry.entry_type == 'word' %}selected{% endif %}>Woord</option>
-                <option value="sentence" {% if entry.entry_type == 'sentence' %}selected{% endif %}>Zin</option>
-            </select>
+            {{ form.entry_type.label }}
+            {{ form.entry_type(class="form-control") }}
+            {% if form.entry_type.errors %}
+                <span class="error">{{ form.entry_type.errors[0] }}</span>
+            {% endif %}
         </div>
 
         <div class="form-group">
             <label for="source_word">{{ word_list.source_language }}:</label>
-            <input type="text" id="source_word" name="source_word" value="{{ entry.source_word }}" required>
+            {{ form.source_word(class="form-control") }}
+            {% if form.source_word.errors %}
+                <span class="error">{{ form.source_word.errors[0] }}</span>
+            {% endif %}
         </div>
 
         <div class="form-group">
             <label for="target_word">{{ word_list.target_language }}:</label>
-            <input type="text" id="target_word" name="target_word" value="{{ entry.target_word }}" required>
+            {{ form.target_word(class="form-control") }}
+            {% if form.target_word.errors %}
+                <span class="error">{{ form.target_word.errors[0] }}</span>
+            {% endif %}
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Bijwerken</button>
+            {{ form.submit(class="btn btn-primary") }}
             <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary">Annuleren</a>
         </div>
     </form>

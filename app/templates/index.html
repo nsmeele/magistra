@@ -13,9 +13,9 @@
                 <p class="languages">{{ list.source_language }} → {{ list.target_language }}</p>
                 <p class="word-count">{{ list.entries|length }} item{% if list.entries|length != 1 %}s{% endif %}</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('main.list_detail', list_id=list.id) }}" class="btn btn-secondary">Bekijken</a>
+                    <a href="{{ url_for('main.list_detail', list_id=list.id) }}" class="btn btn-secondary"><i class="fas fa-eye"></i> Bekijken</a>
                     {% if list.entries %}
-                        <a href="{{ url_for('main.quiz', list_id=list.id) }}" class="btn btn-primary">Oefenen</a>
+                        <a href="{{ url_for('main.quiz', list_id=list.id) }}" class="btn btn-primary"><i class="fas fa-gamepad"></i> Oefenen</a>
                     {% endif %}
                 </div>
             </div>
