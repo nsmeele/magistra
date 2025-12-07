@@ -18,5 +18,22 @@ services:
       timeout: 5s
       retries: 5
 
+  vite:
+    image: node:lts-alpine
+    container_name: magistra_vite
+    working_dir: /app
+    command: sh -c "corepack enable && yarn install"
+    volumes:
+      - ./assets:/app/assets
+      - ./static/dist:/app/static/dist
+      - ./package.json:/app/package.json
+      - ./vite.config.js:/app/vite.config.js
+      - ./node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+
 volumes:
   postgres_data:
+  node_modules:

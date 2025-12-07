@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+body {
+    @apply font-sans leading-normal text-gray-800 bg-gray-100 min-h-screen flex flex-col;
+}
+
+.container {
+    @apply max-w-7xl mx-auto px-5;
+}
+
+/* Navigation */
+nav {
+    @apply bg-gray-800 text-white py-4 shadow-md;
+}
+
+nav .container {
+    @apply flex justify-between items-center;
+}
+
+nav h1 {
+    @apply text-3xl;
+}
+
+nav h1 a {
+    @apply text-white no-underline hover:text-blue-400 transition-colors;
+}
+
+/* Main content */
+main {
+    @apply flex-1 py-8;
+}
+
+h2 {
+    @apply mb-6 text-gray-800;
+}
+
+h3 {
+    @apply my-6 mb-4 text-gray-700;
+}
+
+/* Buttons */
+.btn {
+    @apply inline-block px-5 py-2.5 border-0 rounded cursor-pointer no-underline text-base transition-colors;
+}
+
+.btn-primary {
+    @apply bg-blue-500 text-white hover:bg-blue-600;
+}
+
+.btn-secondary {
+    @apply bg-gray-400 text-white hover:bg-gray-500;
+}
+
+.btn-danger {
+    @apply bg-red-500 text-white hover:bg-red-600;
+}
+
+.btn-small {
+    @apply px-3 py-1.5 text-sm;
+}
+
+.btn-large {
+    @apply px-8 py-4 text-lg;
+}
+
+/* Alerts */
+.alert {
+    @apply p-4 mb-4 rounded;
+}
+
+.alert-success {
+    @apply bg-green-100 text-green-800 border border-green-200;
+}
+
+.alert-error {
+    @apply bg-red-100 text-red-800 border border-red-200;
+}
+
+/* Lists grid */
+.lists-grid {
+    @apply grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 mt-6;
+}
+
+.list-card {
+    @apply bg-white p-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-1 transition-all;
+}
+
+.list-card h3 {
+    @apply m-0 mb-2;
+}
+
+.list-card h3 a {
+    @apply text-gray-800 no-underline hover:text-blue-500;
+}
+
+.list-card .languages {
+    @apply text-gray-500 text-sm mb-2;
+}
+
+.list-card .word-count {
+    @apply text-gray-400 text-[0.85rem] mb-4;
+}
+
+.card-actions {
+    @apply flex gap-2;
+}
+
+.card-actions .btn {
+    @apply flex-1 text-center;
+}
+
+/* Forms */
+.form {
+    @apply bg-white p-8 rounded-lg shadow-md max-w-2xl;
+}
+
+.form-group {
+    @apply mb-6;
+}
+
+.form-group label {
+    @apply block mb-2 font-medium text-gray-800;
+}
+
+.form-group input[type="text"],
+.form-group select {
+    @apply w-full px-3 py-3 border border-gray-300 rounded text-base bg-white focus:outline-none focus:border-blue-500;
+}
+
+.form-group select {
+    @apply cursor-pointer appearance-none bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+}
+
+.form-actions {
+    @apply flex gap-4;
+}
+
+.inline-form {
+    @apply flex gap-4 items-end max-w-none;
+}
+
+.inline-form .form-group {
+    @apply flex-1 mb-0;
+}
+
+/* List detail */
+.list-header {
+    @apply flex justify-between items-start mb-8;
+}
+
+.list-header .languages {
+    @apply text-gray-500 text-base;
+}
+
+.header-actions {
+    @apply flex gap-2;
+}
+
+/* Words table */
+.words-table {
+    @apply w-full bg-white rounded-lg overflow-hidden shadow-md;
+}
+
+.words-table thead {
+    @apply bg-gray-700 text-white;
+}
+
+.words-table th {
+    @apply p-4 text-left font-semibold;
+}
+
+.words-table td {
+    @apply p-4 border-b border-gray-200;
+}
+
+.words-table tbody tr:last-child td {
+    @apply border-b-0;
+}
+
+.words-table tbody tr:hover {
+    @apply bg-gray-50;
+}
+
+.score-good {
+    @apply text-green-600 font-semibold;
+}
+
+.score-bad {
+    @apply text-red-500 font-semibold;
+}
+
+/* Quiz */
+.quiz-container {
+    @apply max-w-2xl mx-auto;
+}
+
+.quiz-header {
+    @apply text-center mb-12;
+}
+
+.quiz-header .progress {
+    @apply text-gray-500 text-lg;
+}
+
+.quiz-question {
+    @apply bg-white py-12 px-8 rounded-lg shadow-md text-center mb-8;
+}
+
+.question-label {
+    @apply text-gray-500 mb-4;
+}
+
+.source-word {
+    @apply text-[2rem] text-gray-800 m-0;
+}
+
+.quiz-form {
+    @apply bg-white p-8 rounded-lg shadow-md mb-4;
+}
+
+.quiz-form input[type="text"] {
+    @apply w-full p-4 text-xl border-2 border-gray-300 rounded mb-6 focus:outline-none focus:border-blue-500;
+}
+
+/* Quiz complete */
+.quiz-complete {
+    @apply max-w-2xl mx-auto text-center;
+}
+
+.score-display {
+    @apply bg-white p-12 rounded-lg shadow-md my-8;
+}
+
+.score-text {
+    @apply text-gray-500 text-lg mb-2;
+}
+
+.score-number {
+    @apply text-5xl font-bold text-gray-800 my-2;
+}
+
+.score-percentage {
+    @apply text-2xl text-blue-500;
+}
+
+.congratulations {
+    @apply text-[1.3rem] text-green-600 my-6;
+}
+
+.encouragement {
+    @apply text-[1.3rem] text-blue-500 my-6;
+}
+
+.quiz-actions {
+    @apply flex gap-4 justify-center flex-wrap;
+}
+
+/* Empty state */
+.empty-state {
+    @apply text-center text-gray-500 p-12 bg-white rounded-lg;
+}
+
+.empty-state a {
+    @apply text-blue-500 no-underline hover:underline;
+}
+
+/* Footer */
+footer {
+    @apply bg-gray-800 text-white py-6 text-center mt-12;
+}
+
+footer p {
+    @apply m-0 text-gray-400;
+}

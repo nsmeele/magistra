@@ -19,3 +19,5 @@ ENV/
 .DS_Store
 *.sqlite
 *.db
+node_modules
+.vite

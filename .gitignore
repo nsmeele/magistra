@@ -23,3 +23,8 @@ htmlcov/
 
 # CI/CD
 .github/workflows/deploy.yml
+
+# Node/Vite
+node_modules/
+static/dist/
+.vite/
