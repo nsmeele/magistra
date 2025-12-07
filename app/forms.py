@@ -61,3 +61,29 @@ class QuizAnswerForm(FlaskForm):
 
     answer = StringField("Jouw antwoord", validators=[DataRequired()])
     submit = SubmitField("Controleren")
+
+
+class QuizDirectionForm(FlaskForm):
+    """Form voor het kiezen van de quiz richting"""
+
+    direction = SelectField(
+        "Richting",
+        validators=[DataRequired()],
+    )
+    submit = SubmitField("Start Quiz")
+
+    def __init__(self, source_language=None, target_language=None, *args, **kwargs):
+        super(QuizDirectionForm, self).__init__(*args, **kwargs)
+        if source_language and target_language:
+            self.direction.choices = [
+                ("random", "Willekeurig (beide richtingen)"),
+                ("forward", f"{source_language} → {target_language}"),
+                ("reverse", f"{target_language} → {source_language}"),
+            ]
+        else:
+            # Fallback voor als er geen talen zijn meegegeven
+            self.direction.choices = [
+                ("random", "Willekeurig (beide richtingen)"),
+                ("forward", "Brontaal → Doeltaal"),
+                ("reverse", "Doeltaal → Brontaal"),
+            ]

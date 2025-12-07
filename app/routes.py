@@ -1,21 +1,10 @@
 from flask import Blueprint
 
-from app.views import (
-    AddEntryView,
-    DeleteEntryView,
-    DeleteListView,
-    EditEntryView,
-    EditListView,
-    IndexView,
-    ListDetailView,
-    MixedQuizAnswerView,
-    MixedQuizQuestionView,
-    MixedQuizStartView,
-    MixedQuizView,
-    NewListView,
-    QuizAnswerView,
-    QuizView,
-)
+from app.views import (AddEntryView, DeleteEntryView, DeleteListView,
+                       EditEntryView, EditListView, IndexView, ListDetailView,
+                       MixedQuizAnswerView, MixedQuizQuestionView,
+                       MixedQuizStartView, MixedQuizView, NewListView,
+                       QuizAnswerView, QuizStartView, QuizView)
 
 # Create Blueprint
 bp = Blueprint("main", __name__)
@@ -42,6 +31,11 @@ bp.add_url_rule(
 )
 bp.add_url_rule(
     "/entry/<int:entry_id>/delete", view_func=DeleteEntryView.as_view("delete_entry")
+)
+bp.add_url_rule(
+    "/list/<int:list_id>/quiz/start",
+    view_func=QuizStartView.as_view("quiz_start"),
+    methods=["GET", "POST"],
 )
 bp.add_url_rule("/list/<int:list_id>/quiz", view_func=QuizView.as_view("quiz"))
 bp.add_url_rule(

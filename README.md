@@ -128,6 +128,16 @@ flask db migrate -m "Beschrijving van wijziging"
 flask db upgrade
 ```
 
+**Database recovery** (als je database in een inconsistente staat raakt):
+
+```bash
+# Als Alembic denkt dat migraties zijn uitgevoerd maar tabellen niet bestaan:
+flask db stamp base      # Reset migration tracking (behoudt data)
+flask db upgrade head    # Voer alle migraties uit
+```
+
+⚠️ **Let op:** Gebruik nooit `db.drop_all()` tenzij je bewust alle data wilt verwijderen!
+
 #### 6. (Optioneel) Seed de Database met Latijnse Werkwoorden
 
 Om snel te beginnen met oefenen, kun je de database vullen met Latijnse werkwoorden:

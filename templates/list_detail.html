@@ -10,7 +10,7 @@
     </div>
     <div class="header-actions">
         {% if word_list.entries %}
-            <a href="{{ url_for('main.quiz', list_id=word_list.id) }}" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Oefening</a>
+            <a href="{{ url_for('main.quiz_start', list_id=word_list.id) }}" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Oefening</a>
         {% endif %}
         <form method="POST" action="{{ url_for('main.delete_list', list_id=word_list.id) }}" style="display: inline;">
             {{ delete_form.hidden_tag() }}

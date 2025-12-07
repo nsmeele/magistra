@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Starten - {{ word_list.name }} - Magistra{% endblock %}
+
+{% block content %}
+<div class="quiz-start">
+    <h2>Quiz Starten: {{ word_list.name }}</h2>
+    <p class="languages">{{ word_list.source_language }} → {{ word_list.target_language }}</p>
+    <p class="subtitle">Kies de richting waarin je wilt oefenen</p>
+
+    <form method="POST" action="{{ url_for('main.quiz_start', list_id=word_list.id) }}" class="form">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.direction.label }}
+            {{ form.direction(class="form-control") }}
+            <p class="help-text">
+                <strong>Willekeurig:</strong> Bij elke vraag wordt willekeurig gekozen uit beide richtingen<br>
+                <strong>Brontaal → Doeltaal:</strong> Je krijgt een woord in {{ word_list.source_language }} en moet het in {{ word_list.target_language }} vertalen<br>
+                <strong>Doeltaal → Brontaal:</strong> Je krijgt een woord in {{ word_list.target_language }} en moet het in {{ word_list.source_language }} vertalen
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Terug</a>
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

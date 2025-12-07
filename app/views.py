@@ -1,13 +1,8 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask.views import MethodView
 
-from app.forms import (
-    AddEntryForm,
-    DeleteForm,
-    EditEntryForm,
-    NewListForm,
-    QuizAnswerForm,
-)
+from app.forms import (AddEntryForm, DeleteForm, EditEntryForm, NewListForm,
+                       QuizAnswerForm, QuizDirectionForm)
 from app.services import ListService, QuizService
 
 
@@ -193,6 +188,54 @@ class DeleteEntryView(MethodView):
             return redirect(url_for("main.index"))
 
 
+class QuizStartView(MethodView):
+    """View for starting a quiz with direction selection"""
+
+    def __init__(self):
+        self.quiz_service = QuizService()
+        self.list_service = ListService()
+
+    def get(self, list_id):
+        """Display the quiz start page with direction selection"""
+        word_list = self.list_service.get_list_by_id(list_id)
+        if not word_list:
+            flash("Lijst niet gevonden", "error")
+            return redirect(url_for("main.index"))
+
+        if not word_list.entries:
+            flash("Deze lijst heeft geen items om te oefenen", "error")
+            return redirect(url_for("main.list_detail", list_id=list_id))
+
+        form = QuizDirectionForm(
+            source_language=word_list.source_language,
+            target_language=word_list.target_language,
+        )
+        return render_template("quiz_start.html", form=form, word_list=word_list)
+
+    def post(self, list_id):
+        """Start the quiz with the selected direction"""
+        word_list = self.list_service.get_list_by_id(list_id)
+        if not word_list:
+            flash("Lijst niet gevonden", "error")
+            return redirect(url_for("main.index"))
+
+        form = QuizDirectionForm(
+            source_language=word_list.source_language,
+            target_language=word_list.target_language,
+        )
+        if form.validate_on_submit():
+            direction = form.direction.data
+            try:
+                quiz_data = self.quiz_service.initialize_quiz(list_id, direction)
+                session.update(quiz_data)
+                return redirect(url_for("main.quiz", list_id=list_id))
+            except ValueError as e:
+                flash(str(e), "error")
+                return redirect(url_for("main.list_detail", list_id=list_id))
+
+        return render_template("quiz_start.html", form=form, word_list=word_list)
+
+
 class QuizView(MethodView):
     """View for the quiz functionality"""
 
@@ -212,17 +255,9 @@ class QuizView(MethodView):
             f"DEBUG: Session before init: quiz_questions={session.get('quiz_questions')}, quiz_list_id={session.get('quiz_list_id')}, quiz_index={session.get('quiz_index')}"
         )
 
-        # Initialize quiz if needed
+        # Check if quiz needs initialization (redirect to quiz start if needed)
         if "quiz_questions" not in session or session.get("quiz_list_id") != list_id:
-            print(f"DEBUG: Initializing quiz for list_id={list_id}")
-            try:
-                quiz_data = self.quiz_service.initialize_quiz(list_id)
-                print(f"DEBUG: Quiz data from initialize: {quiz_data}")
-                session.update(quiz_data)
-                print(f"DEBUG: Session after init: {dict(session)}")
-            except ValueError as e:
-                flash(str(e), "error")
-                return redirect(url_for("main.list_detail", list_id=list_id))
+            return redirect(url_for("main.quiz_start", list_id=list_id))
 
         # Check if quiz is complete
         if self.quiz_service.is_quiz_complete(session):
@@ -349,16 +384,19 @@ class MixedQuizStartView(MethodView):
 
     def post(self):
         """Start a mixed quiz with selected lists"""
-        # Get selected list IDs from form
+        # Get selected list IDs and direction from form
         selected_list_ids = request.form.getlist("list_ids", type=int)
+        direction = request.form.get("direction", "random")
 
         if not selected_list_ids:
             flash("Selecteer minimaal één lijst", "error")
             return redirect(url_for("main.mixed_quiz"))
 
         try:
-            # Initialize mixed quiz
-            quiz_data = self.quiz_service.initialize_mixed_quiz(selected_list_ids)
+            # Initialize mixed quiz with direction preference
+            quiz_data = self.quiz_service.initialize_mixed_quiz(
+                selected_list_ids, direction
+            )
             session.update(quiz_data)
             flash(f"Quiz gestart met {len(selected_list_ids)} lijst(en)!", "success")
             return redirect(url_for("main.mixed_quiz_question"))

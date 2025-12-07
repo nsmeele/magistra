@@ -13,10 +13,7 @@ class List(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     entries = db.relationship(
-        "Entry",
-        backref="list",
-        lazy=True,
-        cascade="all, delete-orphan"
+        "Entry", backref="list", lazy=True, cascade="all, delete-orphan"
     )
 
     def __repr__(self):

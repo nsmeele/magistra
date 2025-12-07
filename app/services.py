@@ -92,8 +92,15 @@ class QuizService:
         self.list_repo = ListRepository()
         self.entry_repo = EntryRepository()
 
-    def initialize_quiz(self, list_id: int) -> Dict:
-        """Initialize a new quiz session"""
+    def initialize_quiz(
+        self, list_id: int, direction_preference: str = "random"
+    ) -> Dict:
+        """Initialize a new quiz session
+
+        Args:
+            list_id: The ID of the list to quiz
+            direction_preference: 'forward', 'reverse', or 'random'
+        """
         vocab_list = self.list_repo.get_by_id(list_id)
         if not vocab_list:
             raise ValueError(f"List with id {list_id} not found")
@@ -101,11 +108,14 @@ class QuizService:
         if not vocab_list.entries:
             raise ValueError("Cannot start quiz: list has no entries")
 
-        # Create quiz questions with random directions
+        # Create quiz questions with directions based on preference
         # Each question is a dict with entry_id and direction ('forward' or 'reverse')
         quiz_questions = []
         for entry in vocab_list.entries:
-            direction = random.choice(["forward", "reverse"])
+            if direction_preference == "random":
+                direction = random.choice(["forward", "reverse"])
+            else:
+                direction = direction_preference
             quiz_questions.append({"entry_id": entry.id, "direction": direction})
 
         # Shuffle questions for random order
@@ -118,8 +128,15 @@ class QuizService:
             "quiz_score": 0,
         }
 
-    def initialize_mixed_quiz(self, list_ids: ListType[int]) -> Dict:
-        """Initialize a quiz session from multiple lists with matching languages"""
+    def initialize_mixed_quiz(
+        self, list_ids: ListType[int], direction_preference: str = "random"
+    ) -> Dict:
+        """Initialize a quiz session from multiple lists with matching languages
+
+        Args:
+            list_ids: List of list IDs to include in the quiz
+            direction_preference: 'forward', 'reverse', or 'random'
+        """
         if not list_ids:
             raise ValueError("Selecteer minimaal één lijst")
 
@@ -163,10 +180,13 @@ class QuizService:
                 "Kan quiz niet starten: geen items gevonden in geselecteerde lijsten"
             )
 
-        # Create quiz questions with random directions
+        # Create quiz questions with directions based on preference
         quiz_questions = []
         for entry in all_entries:
-            direction = random.choice(["forward", "reverse"])
+            if direction_preference == "random":
+                direction = random.choice(["forward", "reverse"])
+            else:
+                direction = direction_preference
             quiz_questions.append({"entry_id": entry.id, "direction": direction})
 
         # Shuffle questions for random order
