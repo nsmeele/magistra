@@ -108,6 +108,68 @@ class QuizService:
             'quiz_score': 0
         }
 
+    def initialize_mixed_quiz(self, list_ids: ListType[int]) -> Dict:
+        """Initialize a quiz session from multiple lists with matching languages"""
+        if not list_ids:
+            raise ValueError("Selecteer minimaal één lijst")
+
+        # Fetch all lists and validate languages
+        vocab_lists = []
+        source_lang = None
+        target_lang = None
+
+        for list_id in list_ids:
+            vocab_list = self.list_repo.get_by_id(list_id)
+            if not vocab_list:
+                raise ValueError(f"Lijst met id {list_id} niet gevonden")
+
+            # Check if languages match
+            if source_lang is None:
+                source_lang = vocab_list.source_language
+                target_lang = vocab_list.target_language
+            elif vocab_list.source_language != source_lang or vocab_list.target_language != target_lang:
+                raise ValueError(
+                    f"Alle lijsten moeten dezelfde talen hebben. "
+                    f"Verwacht: {source_lang} → {target_lang}, "
+                    f"maar '{vocab_list.name}' heeft {vocab_list.source_language} → {vocab_list.target_language}"
+                )
+
+            vocab_lists.append(vocab_list)
+
+        # Gather entries from all selected lists
+        all_entries = []
+        list_names = []
+
+        for vocab_list in vocab_lists:
+            if vocab_list.entries:
+                all_entries.extend(vocab_list.entries)
+                list_names.append(vocab_list.name)
+
+        if not all_entries:
+            raise ValueError("Kan quiz niet starten: geen items gevonden in geselecteerde lijsten")
+
+        # Create quiz questions with random directions
+        quiz_questions = []
+        for entry in all_entries:
+            direction = random.choice(['forward', 'reverse'])
+            quiz_questions.append({
+                'entry_id': entry.id,
+                'direction': direction
+            })
+
+        # Shuffle questions for random order
+        random.shuffle(quiz_questions)
+
+        return {
+            'quiz_questions': quiz_questions,
+            'quiz_list_ids': list_ids,  # Store multiple list IDs
+            'quiz_list_names': list_names,  # Store list names for display
+            'quiz_source_language': source_lang,
+            'quiz_target_language': target_lang,
+            'quiz_index': 0,
+            'quiz_score': 0
+        }
+
     def get_current_question(self, quiz_data: Dict) -> Tuple[Optional[Entry], Dict, str, str]:
         """
         Get the current quiz question

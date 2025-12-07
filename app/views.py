@@ -45,6 +45,19 @@ class NewListView(MethodView):
 
         return render_template('new_list.html', form=form)
 
+class EditListView(MethodView):
+    def __init__(self):
+        self.list_service = ListService()
+
+    def get(self, list_id):
+        """Display the edit list form"""
+        word_list = self.list_service.get_list_by_id(list_id)
+        if not word_list:
+            flash('Lijst niet gevonden', 'error')
+            return redirect(url_for('main.index'))
+
+        form = NewListForm(obj=word_list)
+        return render_template('edit_list.html', form=form, word_list=word_list)
 
 class ListDetailView(MethodView):
     """View for displaying list details and managing entries"""
@@ -273,3 +286,149 @@ class QuizAnswerView(MethodView):
                 flash(str(e), 'error')
 
         return redirect(url_for('main.quiz', list_id=list_id))
+
+
+class MixedQuizView(MethodView):
+    """View for selecting lists for a mixed quiz"""
+
+    def __init__(self):
+        self.list_service = ListService()
+
+    def get(self):
+        """Display list selection page grouped by language pairs"""
+        all_lists = self.list_service.get_all_lists()
+
+        # Group lists by language pair
+        language_pairs = {}
+        for lst in all_lists:
+            key = f"{lst.source_language} → {lst.target_language}"
+            if key not in language_pairs:
+                language_pairs[key] = []
+            language_pairs[key].append(lst)
+
+        return render_template('mixed_quiz.html', language_pairs=language_pairs)
+
+
+class MixedQuizStartView(MethodView):
+    """View for starting a mixed quiz with selected lists"""
+
+    def __init__(self):
+        self.quiz_service = QuizService()
+
+    def post(self):
+        """Start a mixed quiz with selected lists"""
+        # Get selected list IDs from form
+        selected_list_ids = request.form.getlist('list_ids', type=int)
+
+        if not selected_list_ids:
+            flash('Selecteer minimaal één lijst', 'error')
+            return redirect(url_for('main.mixed_quiz'))
+
+        try:
+            # Initialize mixed quiz
+            quiz_data = self.quiz_service.initialize_mixed_quiz(selected_list_ids)
+            session.update(quiz_data)
+            flash(f'Quiz gestart met {len(selected_list_ids)} lijst(en)!', 'success')
+            return redirect(url_for('main.mixed_quiz_question'))
+
+        except ValueError as e:
+            flash(str(e), 'error')
+            return redirect(url_for('main.mixed_quiz'))
+
+
+class MixedQuizQuestionView(MethodView):
+    """View for displaying mixed quiz questions"""
+
+    def __init__(self):
+        self.quiz_service = QuizService()
+
+    def get(self):
+        """Display the current quiz question or results"""
+        # Check if there's an active mixed quiz
+        if 'quiz_list_ids' not in session or 'quiz_questions' not in session:
+            flash('Geen actieve quiz. Start een nieuwe quiz.', 'error')
+            return redirect(url_for('main.mixed_quiz'))
+
+        # Check if quiz is complete
+        if self.quiz_service.is_quiz_complete(session):
+            results = self.quiz_service.get_quiz_results(session)
+            list_names = session.get('quiz_list_names', [])
+            # Clear session
+            session.pop('quiz_questions', None)
+            session.pop('quiz_list_ids', None)
+            session.pop('quiz_list_names', None)
+            session.pop('quiz_source_language', None)
+            session.pop('quiz_target_language', None)
+            session.pop('quiz_index', None)
+            session.pop('quiz_score', None)
+            return render_template('mixed_quiz_complete.html',
+                                 score=results['score'],
+                                 total=results['total'],
+                                 list_names=list_names)
+
+        # Get current question
+        entry, updated_quiz_data, progress, direction = self.quiz_service.get_current_question(dict(session))
+        if not entry:
+            # All entries were deleted or quiz is broken, clear session
+            session.pop('quiz_questions', None)
+            session.pop('quiz_list_ids', None)
+            session.pop('quiz_list_names', None)
+            session.pop('quiz_source_language', None)
+            session.pop('quiz_target_language', None)
+            session.pop('quiz_index', None)
+            session.pop('quiz_score', None)
+            flash('De quiz kon niet worden geladen. Probeer opnieuw.', 'error')
+            return redirect(url_for('main.mixed_quiz'))
+
+        # Update session
+        session.update(updated_quiz_data)
+
+        form = QuizAnswerForm()
+        list_names = session.get('quiz_list_names', [])
+        return render_template('mixed_quiz_question.html',
+                             entry=entry,
+                             progress=progress,
+                             direction=direction,
+                             list_names=list_names,
+                             form=form)
+
+
+class MixedQuizAnswerView(MethodView):
+    """View for handling mixed quiz answers"""
+
+    def __init__(self):
+        self.quiz_service = QuizService()
+
+    def post(self):
+        """Check the user's answer and advance quiz"""
+        form = QuizAnswerForm()
+
+        if form.validate_on_submit():
+            entry_id = request.form.get('entry_id', type=int)
+            direction = request.form.get('direction', 'forward')
+            user_answer = form.answer.data
+
+            try:
+                is_correct, correct_answer = self.quiz_service.check_answer(entry_id, user_answer, direction)
+
+                # Get entry for flash message
+                from app.repositories import EntryRepository
+                entry_repo = EntryRepository()
+                entry = entry_repo.get_by_id(entry_id)
+
+                # Show the question word based on direction
+                question_word = entry.source_word if direction == 'forward' else entry.target_word
+
+                if is_correct:
+                    flash(f'Correct! {question_word} = {correct_answer}', 'success')
+                else:
+                    flash(f'Fout! {question_word} = {correct_answer} (jij antwoordde: {user_answer})', 'error')
+
+                # Advance quiz
+                quiz_data = self.quiz_service.advance_quiz(dict(session), is_correct)
+                session.update(quiz_data)
+
+            except ValueError as e:
+                flash(str(e), 'error')
+
+        return redirect(url_for('main.mixed_quiz_question'))

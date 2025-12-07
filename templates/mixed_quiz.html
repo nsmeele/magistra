@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Gemengde Quiz - Magistra{% endblock %}
+
+{% block content %}
+<h2>Gemengde Quiz</h2>
+<p class="subtitle">Selecteer meerdere lijsten om samen te oefenen</p>
+
+{% if language_pairs %}
+    <form method="POST" action="{{ url_for('main.mixed_quiz_start') }}">
+        {% for lang_pair, lists in language_pairs.items() %}
+            <div class="language-group">
+                <h3 class="language-header">{{ lang_pair }}</h3>
+                <div class="lists-selection">
+                    {% for list in lists %}
+                        <div class="list-checkbox">
+                            <input type="checkbox"
+                                   name="list_ids"
+                                   value="{{ list.id }}"
+                                   id="list_{{ list.id }}"
+                                   {% if lists|length == 1 %}checked{% endif %}>
+                            <label for="list_{{ list.id }}">
+                                <strong>{{ list.name }}</strong>
+                                <span class="word-count">({{ list.entries|length }} item{% if list.entries|length != 1 %}s{% endif %})</span>
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="form-actions">
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Terug</a>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-play"></i> Start Quiz</button>
+        </div>
+    </form>
+{% else %}
+    <p class="empty-state">
+        Je hebt nog geen woordenlijsten.
+        <a href="{{ url_for('main.new_list') }}">Maak je eerste lijst aan!</a>
+    </p>
+{% endif %}
+{% endblock %}

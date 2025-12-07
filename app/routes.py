@@ -8,7 +8,12 @@ from app.views import (
     DeleteListView,
     DeleteEntryView,
     QuizView,
-    QuizAnswerView
+    QuizAnswerView,
+    EditListView,
+    MixedQuizView,
+    MixedQuizStartView,
+    MixedQuizQuestionView,
+    MixedQuizAnswerView
 )
 
 # Create Blueprint
@@ -18,9 +23,16 @@ bp = Blueprint('main', __name__)
 bp.add_url_rule('/', view_func=IndexView.as_view('index'))
 bp.add_url_rule('/list/new', view_func=NewListView.as_view('new_list'))
 bp.add_url_rule('/list/<int:list_id>', view_func=ListDetailView.as_view('list_detail'))
+bp.add_url_rule('/list/<int:list_id>/edit', view_func=EditListView.as_view('edit_list'), methods=['GET', 'POST'])
 bp.add_url_rule('/list/<int:list_id>/entry', view_func=AddEntryView.as_view('add_entry'))
 bp.add_url_rule('/entry/<int:entry_id>/edit', view_func=EditEntryView.as_view('edit_entry'), methods=['GET', 'POST'])
 bp.add_url_rule('/list/<int:list_id>/delete', view_func=DeleteListView.as_view('delete_list'))
 bp.add_url_rule('/entry/<int:entry_id>/delete', view_func=DeleteEntryView.as_view('delete_entry'))
 bp.add_url_rule('/list/<int:list_id>/quiz', view_func=QuizView.as_view('quiz'))
 bp.add_url_rule('/list/<int:list_id>/quiz/answer', view_func=QuizAnswerView.as_view('quiz_answer'))
+
+# Mixed quiz routes
+bp.add_url_rule('/quiz/mixed', view_func=MixedQuizView.as_view('mixed_quiz'))
+bp.add_url_rule('/quiz/mixed/start', view_func=MixedQuizStartView.as_view('mixed_quiz_start'), methods=['POST'])
+bp.add_url_rule('/quiz/mixed/question', view_func=MixedQuizQuestionView.as_view('mixed_quiz_question'))
+bp.add_url_rule('/quiz/mixed/answer', view_func=MixedQuizAnswerView.as_view('mixed_quiz_answer'), methods=['POST'])

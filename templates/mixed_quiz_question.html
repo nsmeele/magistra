@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Gemengde Quiz - Magistra{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <div class="quiz-header">
+        <h2>Gemengde Quiz</h2>
+        <p class="quiz-lists">{{ list_names|join(', ') }}</p>
+        <p class="quiz-progress">Vraag {{ progress }}</p>
+    </div>
+
+    <div class="quiz-question">
+        <p class="question-label">
+            {% if direction == 'forward' %}
+                Wat is de vertaling van:
+            {% else %}
+                Wat is het {{ entry.list.source_language }} woord voor:
+            {% endif %}
+        </p>
+        <h3 class="question-word">
+            {{ entry.source_word if direction == 'forward' else entry.target_word }}
+        </h3>
+    </div>
+
+    <form method="POST" action="{{ url_for('main.mixed_quiz_answer') }}" class="quiz-form">
+        {{ form.hidden_tag() }}
+        <input type="hidden" name="entry_id" value="{{ entry.id }}">
+        <input type="hidden" name="direction" value="{{ direction }}">
+
+        <div class="form-group">
+            {{ form.answer(class="form-control", placeholder="Jouw antwoord...", autofocus=True, autocomplete="off") }}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large">
+                <i class="fas fa-check"></i> Controleer
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

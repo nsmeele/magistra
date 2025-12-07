@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Voltooid - Magistra{% endblock %}
+
+{% block content %}
+<div class="quiz-complete">
+    <div class="complete-icon">
+        <i class="fas fa-trophy"></i>
+    </div>
+
+    <h2>Quiz Voltooid!</h2>
+
+    <div class="quiz-lists">
+        <p><strong>Geoefende lijsten:</strong></p>
+        <ul>
+            {% for list_name in list_names %}
+                <li>{{ list_name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="score-card">
+        <p class="score-label">Jouw Score:</p>
+        <p class="score-value">{{ score }} / {{ total }}</p>
+        {% set percentage = (score / total * 100) | round | int if total > 0 else 0 %}
+        <p class="score-percentage">{{ percentage }}%</p>
+
+        {% if percentage >= 90 %}
+            <p class="score-message excellent">Uitstekend! Je beheerst deze woorden heel goed!</p>
+        {% elif percentage >= 70 %}
+            <p class="score-message good">Goed gedaan! Blijf oefenen om nog beter te worden.</p>
+        {% elif percentage >= 50 %}
+            <p class="score-message okay">Niet slecht! Blijf oefenen om je score te verbeteren.</p>
+        {% else %}
+            <p class="score-message needs-work">Blijf oefenen! Je kunt het!</p>
+        {% endif %}
+    </div>
+
+    <div class="quiz-actions">
+        <a href="{{ url_for('main.mixed_quiz') }}" class="btn btn-primary">
+            <i class="fas fa-redo"></i> Nieuwe Gemengde Quiz
+        </a>
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+            <i class="fas fa-home"></i> Terug naar Home
+        </a>
+    </div>
+</div>
+{% endblock %}
