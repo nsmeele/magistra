@@ -17,14 +17,6 @@ nav .container {
     @apply flex justify-between items-center;
 }
 
-nav h1 {
-    @apply text-3xl;
-}
-
-nav h1 a {
-    @apply text-white no-underline hover:text-blue-400 transition-colors;
-}
-
 /* Main content */
 main {
     @apply flex-1 py-8;

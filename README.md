@@ -7,6 +7,9 @@ Een woordjes overhoring applicatie gebouwd met Flask en PostgreSQL.
 - Maak woordenlijsten met bron- en doeltaal
 - Voeg woorden toe aan lijsten
 - Oefen met een interactieve quiz
+  - Bidirectionele quizzes (bron→doel en doel→bron)
+  - Mixed quizzes met meerdere lijsten tegelijk
+  - Foute antwoorden worden herhaald tot je ze goed hebt
 - Houd scores bij (goed/fout per woord)
 
 ## Quick Start
@@ -20,10 +23,13 @@ pip install -r requirements.txt
 # 2. Start database
 docker compose up -d
 
-# 3. Run migrations
+# 3. Build frontend assets
+docker compose run --rm vite yarn build
+
+# 4. Run migrations
 flask db upgrade
 
-# 4. Start applicatie
+# 5. Start applicatie
 python run.py
 ```
 
@@ -166,23 +172,35 @@ De applicatie volgt een volledige OOP architectuur met separation of concerns:
 magistra/
 ├── app/
 │   ├── __init__.py          # Flask app factory
-│   ├── models.py            # Database models (WordList, Word)
+│   ├── models.py            # Database models (List, Entry)
 │   ├── repositories.py      # Data access layer (Repository pattern)
 │   ├── services.py          # Business logic layer (Services)
 │   ├── views.py             # Presentation layer (Class-based views)
 │   ├── routes.py            # URL routing configuration
+│   ├── forms.py             # WTForms form definitions
 │   └── templates/           # Jinja2 templates
 │       ├── base.html
 │       ├── index.html
-│       ├── new_list.html
 │       ├── list_detail.html
 │       ├── quiz.html
-│       └── quiz_complete.html
+│       ├── mixed_quiz.html
+│       └── ...
+├── assets/                  # Frontend source files (Vite input)
+│   └── main.js              # JavaScript entry point
 ├── static/
-│   └── style.css            # CSS styling
+│   └── dist/                # Compiled assets (Vite output)
+│       ├── assets/
+│       │   ├── main-*.js
+│       │   └── main-*.css
+│       └── .vite/
+│           └── manifest.json
+├── migrations/              # Database migrations (Alembic)
 ├── config.py                # Configuratie
 ├── run.py                   # Entry point
-└── requirements.txt         # Dependencies
+├── vite.config.js           # Vite configuratie
+├── package.json             # Node.js dependencies
+├── docker-compose.yml       # Docker services (DB + Vite)
+└── requirements.txt         # Python dependencies
 ```
 
 ### Architectuur Lagen
@@ -214,9 +232,25 @@ docker compose logs -f db     # Bekijk database logs
 ### Flask
 ```bash
 python run.py                 # Start applicatie
+flask run                     # Alternatief: start Flask dev server
 flask db upgrade              # Run migrations
 flask db migrate -m "msg"     # Create migration
 ```
+
+### Frontend (Vite)
+```bash
+# Build production assets
+docker compose run --rm vite yarn build
+
+# Development mode (met hot reload)
+docker compose run --rm vite yarn dev
+
+# Install/update dependencies
+docker compose run --rm vite yarn install
+```
+
+**Let op:** Gebruik `docker compose run` in plaats van `docker exec` omdat de Vite container
+niet continu draait. De `--rm` flag verwijdert de container automatisch na gebruik.
 
 ### Development Tools
 ```bash
@@ -239,6 +273,9 @@ De applicatie gebruikt:
 - **SQLAlchemy** als ORM
 - **Jinja2** voor templates (vergelijkbaar met Twig)
 - **Flask-Migrate** voor database migraties
+- **Vite** voor frontend build (JavaScript/CSS bundling)
+- **Tailwind CSS** voor styling
+- **Font Awesome** voor iconen
 
 ### OOP Architectuur
 

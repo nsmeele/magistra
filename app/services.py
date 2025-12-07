@@ -230,11 +230,25 @@ class QuizService:
     def advance_quiz(self, quiz_data: Dict, is_correct: bool) -> Dict:
         """
         Advance to the next question
+        If incorrect, add the question back to the end of the queue
         Returns: updated quiz_data
         """
-        quiz_data['quiz_index'] = quiz_data.get('quiz_index', 0) + 1
+        quiz_index = quiz_data.get('quiz_index', 0)
+        quiz_questions = quiz_data.get('quiz_questions', [])
+
         if is_correct:
+            # Move to next question and increment score
             quiz_data['quiz_score'] = quiz_data.get('quiz_score', 0) + 1
+            quiz_data['quiz_index'] = quiz_index + 1
+        else:
+            # Re-add the current question to the end of the queue
+            if quiz_index < len(quiz_questions):
+                current_question = quiz_questions[quiz_index]
+                quiz_questions.append(current_question)
+                quiz_data['quiz_questions'] = quiz_questions
+            # Move to next question (the incorrect one is now also at the end)
+            quiz_data['quiz_index'] = quiz_index + 1
+
         return quiz_data
 
     def is_quiz_complete(self, quiz_data: Dict) -> bool:
