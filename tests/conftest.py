@@ -1,4 +1,5 @@
 import pytest
+
 from app import create_app
 from app.models import db
 
@@ -7,11 +8,13 @@ from app.models import db
 def app():
     """Create and configure a test application instance."""
     app = create_app()
-    app.config.update({
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
-        'WTF_CSRF_ENABLED': False,
-    })
+    app.config.update(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "WTF_CSRF_ENABLED": False,
+        }
+    )
 
     with app.app_context():
         db.create_all()

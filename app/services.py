@@ -1,7 +1,10 @@
-from typing import List as ListType, Optional, Dict, Tuple
 import random
-from app.repositories import ListRepository, EntryRepository
-from app.models import List, Entry
+from typing import Dict
+from typing import List as ListType
+from typing import Optional, Tuple
+
+from app.models import Entry, List
+from app.repositories import EntryRepository, ListRepository
 
 
 class ListService:
@@ -23,7 +26,9 @@ class ListService:
         """Get a specific entry"""
         return self.entry_repo.get_by_id(entry_id)
 
-    def create_list(self, name: str, source_language: str, target_language: str) -> List:
+    def create_list(
+        self, name: str, source_language: str, target_language: str
+    ) -> List:
         """Create a new list"""
         if not all([name, source_language, target_language]):
             raise ValueError("All fields are required")
@@ -36,7 +41,9 @@ class ListService:
             raise ValueError(f"List with id {list_id} not found")
         self.list_repo.delete(vocab_list)
 
-    def add_entry_to_list(self, list_id: int, source_word: str, target_word: str, entry_type: str = 'word') -> Entry:
+    def add_entry_to_list(
+        self, list_id: int, source_word: str, target_word: str, entry_type: str = "word"
+    ) -> Entry:
         """Add an entry to a list"""
         vocab_list = self.list_repo.get_by_id(list_id)
         if not vocab_list:
@@ -45,9 +52,13 @@ class ListService:
         if not all([source_word, target_word]):
             raise ValueError("Both source and target are required")
 
-        return self.entry_repo.create_entry(list_id, source_word, target_word, entry_type)
+        return self.entry_repo.create_entry(
+            list_id, source_word, target_word, entry_type
+        )
 
-    def update_entry(self, entry_id: int, source_word: str, target_word: str, entry_type: str) -> Entry:
+    def update_entry(
+        self, entry_id: int, source_word: str, target_word: str, entry_type: str
+    ) -> Entry:
         """Update an existing entry"""
         entry = self.entry_repo.get_by_id(entry_id)
         if not entry:
@@ -56,10 +67,12 @@ class ListService:
         if not all([source_word, target_word]):
             raise ValueError("Both source and target are required")
 
-        return self.entry_repo.update(entry,
-                                      source_word=source_word,
-                                      target_word=target_word,
-                                      entry_type=entry_type)
+        return self.entry_repo.update(
+            entry,
+            source_word=source_word,
+            target_word=target_word,
+            entry_type=entry_type,
+        )
 
     def delete_entry(self, entry_id: int) -> int:
         """Delete an entry and return its list_id"""
@@ -92,20 +105,17 @@ class QuizService:
         # Each question is a dict with entry_id and direction ('forward' or 'reverse')
         quiz_questions = []
         for entry in vocab_list.entries:
-            direction = random.choice(['forward', 'reverse'])
-            quiz_questions.append({
-                'entry_id': entry.id,
-                'direction': direction
-            })
+            direction = random.choice(["forward", "reverse"])
+            quiz_questions.append({"entry_id": entry.id, "direction": direction})
 
         # Shuffle questions for random order
         random.shuffle(quiz_questions)
 
         return {
-            'quiz_questions': quiz_questions,
-            'quiz_list_id': list_id,
-            'quiz_index': 0,
-            'quiz_score': 0
+            "quiz_questions": quiz_questions,
+            "quiz_list_id": list_id,
+            "quiz_index": 0,
+            "quiz_score": 0,
         }
 
     def initialize_mixed_quiz(self, list_ids: ListType[int]) -> Dict:
@@ -127,7 +137,10 @@ class QuizService:
             if source_lang is None:
                 source_lang = vocab_list.source_language
                 target_lang = vocab_list.target_language
-            elif vocab_list.source_language != source_lang or vocab_list.target_language != target_lang:
+            elif (
+                vocab_list.source_language != source_lang
+                or vocab_list.target_language != target_lang
+            ):
                 raise ValueError(
                     f"Alle lijsten moeten dezelfde talen hebben. "
                     f"Verwacht: {source_lang} → {target_lang}, "
@@ -146,52 +159,53 @@ class QuizService:
                 list_names.append(vocab_list.name)
 
         if not all_entries:
-            raise ValueError("Kan quiz niet starten: geen items gevonden in geselecteerde lijsten")
+            raise ValueError(
+                "Kan quiz niet starten: geen items gevonden in geselecteerde lijsten"
+            )
 
         # Create quiz questions with random directions
         quiz_questions = []
         for entry in all_entries:
-            direction = random.choice(['forward', 'reverse'])
-            quiz_questions.append({
-                'entry_id': entry.id,
-                'direction': direction
-            })
+            direction = random.choice(["forward", "reverse"])
+            quiz_questions.append({"entry_id": entry.id, "direction": direction})
 
         # Shuffle questions for random order
         random.shuffle(quiz_questions)
 
         return {
-            'quiz_questions': quiz_questions,
-            'quiz_list_ids': list_ids,  # Store multiple list IDs
-            'quiz_list_names': list_names,  # Store list names for display
-            'quiz_source_language': source_lang,
-            'quiz_target_language': target_lang,
-            'quiz_index': 0,
-            'quiz_score': 0
+            "quiz_questions": quiz_questions,
+            "quiz_list_ids": list_ids,  # Store multiple list IDs
+            "quiz_list_names": list_names,  # Store list names for display
+            "quiz_source_language": source_lang,
+            "quiz_target_language": target_lang,
+            "quiz_index": 0,
+            "quiz_score": 0,
         }
 
-    def get_current_question(self, quiz_data: Dict) -> Tuple[Optional[Entry], Dict, str, str]:
+    def get_current_question(
+        self, quiz_data: Dict
+    ) -> Tuple[Optional[Entry], Dict, str, str]:
         """
         Get the current quiz question
         Returns: (entry, updated_quiz_data, progress_string, direction) or (None, quiz_data, '', '') if quiz is complete
         """
-        quiz_index = quiz_data.get('quiz_index', 0)
-        quiz_questions = quiz_data.get('quiz_questions', [])
+        quiz_index = quiz_data.get("quiz_index", 0)
+        quiz_questions = quiz_data.get("quiz_questions", [])
 
         if quiz_index >= len(quiz_questions):
-            return None, quiz_data, '', ''
+            return None, quiz_data, "", ""
 
         # Try to find a valid entry, skipping deleted ones
         while quiz_index < len(quiz_questions):
             question = quiz_questions[quiz_index]
-            entry_id = question['entry_id']
-            direction = question['direction']
+            entry_id = question["entry_id"]
+            direction = question["direction"]
             entry = self.entry_repo.get_by_id(entry_id)
 
             if entry:
                 # Found a valid entry
                 # Update quiz_data with the potentially skipped index
-                quiz_data['quiz_index'] = quiz_index
+                quiz_data["quiz_index"] = quiz_index
                 progress = f"{quiz_index + 1}/{len(quiz_questions)}"
                 return entry, quiz_data, progress, direction
 
@@ -199,9 +213,11 @@ class QuizService:
             quiz_index += 1
 
         # All remaining entries were deleted
-        return None, quiz_data, '', ''
+        return None, quiz_data, "", ""
 
-    def check_answer(self, entry_id: int, user_answer: str, direction: str = 'forward') -> Tuple[bool, str]:
+    def check_answer(
+        self, entry_id: int, user_answer: str, direction: str = "forward"
+    ) -> Tuple[bool, str]:
         """
         Check if the user's answer is correct
         Returns: (is_correct, correct_answer)
@@ -211,7 +227,7 @@ class QuizService:
             raise ValueError(f"Entry with id {entry_id} not found")
 
         # Determine the correct answer based on direction
-        if direction == 'forward':
+        if direction == "forward":
             # source -> target (original behavior)
             correct_answer_value = entry.target_word
         else:
@@ -233,33 +249,33 @@ class QuizService:
         If incorrect, add the question back to the end of the queue
         Returns: updated quiz_data
         """
-        quiz_index = quiz_data.get('quiz_index', 0)
-        quiz_questions = quiz_data.get('quiz_questions', [])
+        quiz_index = quiz_data.get("quiz_index", 0)
+        quiz_questions = quiz_data.get("quiz_questions", [])
 
         if is_correct:
             # Move to next question and increment score
-            quiz_data['quiz_score'] = quiz_data.get('quiz_score', 0) + 1
-            quiz_data['quiz_index'] = quiz_index + 1
+            quiz_data["quiz_score"] = quiz_data.get("quiz_score", 0) + 1
+            quiz_data["quiz_index"] = quiz_index + 1
         else:
             # Re-add the current question to the end of the queue
             if quiz_index < len(quiz_questions):
                 current_question = quiz_questions[quiz_index]
                 quiz_questions.append(current_question)
-                quiz_data['quiz_questions'] = quiz_questions
+                quiz_data["quiz_questions"] = quiz_questions
             # Move to next question (the incorrect one is now also at the end)
-            quiz_data['quiz_index'] = quiz_index + 1
+            quiz_data["quiz_index"] = quiz_index + 1
 
         return quiz_data
 
     def is_quiz_complete(self, quiz_data: Dict) -> bool:
         """Check if the quiz is complete"""
-        quiz_index = quiz_data.get('quiz_index', 0)
-        quiz_questions = quiz_data.get('quiz_questions', [])
+        quiz_index = quiz_data.get("quiz_index", 0)
+        quiz_questions = quiz_data.get("quiz_questions", [])
         return quiz_index >= len(quiz_questions)
 
     def get_quiz_results(self, quiz_data: Dict) -> Dict:
         """Get the final quiz results"""
         return {
-            'score': quiz_data.get('quiz_score', 0),
-            'total': len(quiz_data.get('quiz_questions', []))
+            "score": quiz_data.get("quiz_score", 0),
+            "total": len(quiz_data.get("quiz_questions", [])),
         }

@@ -1,6 +1,8 @@
-from typing import List as ListType, Optional
+from typing import List as ListType
+from typing import Optional
+
 from app import db
-from app.models import List, Entry
+from app.models import Entry, List
 
 
 class BaseRepository:
@@ -43,20 +45,20 @@ class ListRepository(BaseRepository):
     def __init__(self):
         super().__init__(List)
 
-    def get_all_ordered(self) -> ListType['List']:
+    def get_all_ordered(self) -> ListType["List"]:
         """Get all lists ordered by creation date (newest first)"""
         return self.model.query.order_by(self.model.created_at.desc()).all()
 
-    def get_with_entries(self, list_id: int) -> Optional['List']:
+    def get_with_entries(self, list_id: int) -> Optional["List"]:
         """Get a list with all its entries loaded"""
         return self.model.query.filter_by(id=list_id).first()
 
-    def create_list(self, name: str, source_language: str, target_language: str) -> 'List':
+    def create_list(
+        self, name: str, source_language: str, target_language: str
+    ) -> "List":
         """Create a new list"""
         return self.create(
-            name=name,
-            source_language=source_language,
-            target_language=target_language
+            name=name, source_language=source_language, target_language=target_language
         )
 
 
@@ -70,13 +72,15 @@ class EntryRepository(BaseRepository):
         """Get all entries for a specific list"""
         return self.model.query.filter_by(list_id=list_id).all()
 
-    def create_entry(self, list_id: int, source_word: str, target_word: str, entry_type: str = 'word') -> Entry:
+    def create_entry(
+        self, list_id: int, source_word: str, target_word: str, entry_type: str = "word"
+    ) -> Entry:
         """Create a new entry"""
         return self.create(
             list_id=list_id,
             source_word=source_word,
             target_word=target_word,
-            entry_type=entry_type
+            entry_type=entry_type,
         )
 
     def update_score(self, entry: Entry, is_correct: bool) -> Entry:

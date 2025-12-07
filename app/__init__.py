@@ -1,15 +1,18 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from config import Config
 import json
 import os
+
+from flask import Flask
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+
+from config import Config
 
 db = SQLAlchemy()
 migrate = Migrate()
 
+
 def create_app(config_class=Config):
-    app = Flask(__name__, static_folder='../static', template_folder='../templates')
+    app = Flask(__name__, static_folder="../static", template_folder="../templates")
     app.config.from_object(config_class)
 
     db.init_app(app)
@@ -19,9 +22,11 @@ def create_app(config_class=Config):
     @app.context_processor
     def vite_helpers():
         def get_vite_asset(entry):
-            manifest_path = os.path.join(app.static_folder, 'dist', '.vite', 'manifest.json')
+            manifest_path = os.path.join(
+                app.static_folder, "dist", ".vite", "manifest.json"
+            )
             if os.path.exists(manifest_path):
-                with open(manifest_path, 'r') as f:
+                with open(manifest_path, "r") as f:
                     manifest = json.load(f)
                     if entry in manifest:
                         return f"/static/dist/{manifest[entry]['file']}"
@@ -29,17 +34,20 @@ def create_app(config_class=Config):
             return f"/static/dist/assets/{entry}"
 
         def get_vite_css(entry):
-            manifest_path = os.path.join(app.static_folder, 'dist', '.vite', 'manifest.json')
+            manifest_path = os.path.join(
+                app.static_folder, "dist", ".vite", "manifest.json"
+            )
             if os.path.exists(manifest_path):
-                with open(manifest_path, 'r') as f:
+                with open(manifest_path, "r") as f:
                     manifest = json.load(f)
-                    if entry in manifest and 'css' in manifest[entry]:
-                        return [f"/static/dist/{css}" for css in manifest[entry]['css']]
+                    if entry in manifest and "css" in manifest[entry]:
+                        return [f"/static/dist/{css}" for css in manifest[entry]["css"]]
             return []
 
         return dict(vite_asset=get_vite_asset, vite_css=get_vite_css)
 
-    from app import routes, models
+    from app import models, routes
+
     app.register_blueprint(routes.bp)
 
     return app
