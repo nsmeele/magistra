@@ -207,20 +207,27 @@ class QuizAnswerView(MethodView):
         user_answer = request.form.get('answer', '')
 
         try:
-            is_correct, correct_answer = self.quiz_service.check_answer(entry_id, user_answer)
+            is_accepted, correct_answer, similarity, feedback = self.quiz_service.check_answer(entry_id, user_answer)
 
             # Get source word for flash message
             from app.repositories import EntryRepository
             entry_repo = EntryRepository()
             entry = entry_repo.get_by_id(entry_id)
 
-            if is_correct:
-                flash(f'Correct! {entry.source_word} = {correct_answer}', 'success')
+            # Create detailed feedback message
+            if is_accepted:
+                if similarity >= 1.0:
+                    # Perfect match
+                    flash(f'✓ Perfect! {entry.source_word} = {correct_answer}', 'success')
+                else:
+                    # Accepted with typo/error
+                    flash(f'✓ {feedback} {entry.source_word} = {correct_answer} (jij: "{user_answer}", {int(similarity*100)}% match)', 'success')
             else:
-                flash(f'Fout! {entry.source_word} = {correct_answer} (jij antwoordde: {user_answer})', 'error')
+                # Not accepted
+                flash(f'✗ Fout! {entry.source_word} = {correct_answer} (jij antwoordde: "{user_answer}")', 'error')
 
             # Advance quiz
-            quiz_data = self.quiz_service.advance_quiz(dict(session), is_correct)
+            quiz_data = self.quiz_service.advance_quiz(dict(session), is_accepted)
             session.update(quiz_data)
 
         except ValueError as e:
