@@ -2,6 +2,7 @@ from typing import List as ListType, Optional, Dict, Tuple
 import random
 from app.repositories import ListRepository, EntryRepository
 from app.models import List, Entry
+from app.answer_checker import AnswerChecker
 
 
 class ListService:
@@ -78,6 +79,7 @@ class QuizService:
     def __init__(self):
         self.list_repo = ListRepository()
         self.entry_repo = EntryRepository()
+        self.answer_checker = AnswerChecker()
 
     def initialize_quiz(self, list_id: int) -> Dict:
         """Initialize a new quiz session"""
@@ -116,23 +118,25 @@ class QuizService:
 
         return entry, progress
 
-    def check_answer(self, entry_id: int, user_answer: str) -> Tuple[bool, str]:
+    def check_answer(self, entry_id: int, user_answer: str) -> Tuple[bool, str, float, str]:
         """
-        Check if the user's answer is correct
-        Returns: (is_correct, correct_answer)
+        Check if the user's answer is correct using intelligent fuzzy matching.
+
+        Returns: (is_accepted, correct_answer, similarity_score, feedback)
         """
         entry = self.entry_repo.get_by_id(entry_id)
         if not entry:
             raise ValueError(f"Entry with id {entry_id} not found")
 
-        correct_answer = entry.target_word.strip().lower()
-        user_answer_clean = user_answer.strip().lower()
-        is_correct = user_answer_clean == correct_answer
+        # Use intelligent answer checker
+        is_accepted, similarity, feedback = self.answer_checker.check_answer(
+            user_answer, entry.target_word
+        )
 
         # Update entry score
-        self.entry_repo.update_score(entry, is_correct)
+        self.entry_repo.update_score(entry, is_accepted)
 
-        return is_correct, entry.target_word
+        return is_accepted, entry.target_word, similarity, feedback
 
     def advance_quiz(self, quiz_data: Dict, is_correct: bool) -> Dict:
         """
