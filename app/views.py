@@ -1,13 +1,13 @@
 from flask import render_template, request, redirect, url_for, flash, session
 from flask.views import MethodView
-from app.services import WordListService, QuizService
+from app.services import ListService, QuizService
 
 
 class IndexView(MethodView):
-    """View for the homepage listing all word lists"""
+    """View for the homepage listing all lists"""
 
     def __init__(self):
-        self.list_service = WordListService()
+        self.list_service = ListService()
 
     def get(self):
         """Display all word lists"""
@@ -16,10 +16,10 @@ class IndexView(MethodView):
 
 
 class NewListView(MethodView):
-    """View for creating a new word list"""
+    """View for creating a new list"""
 
     def __init__(self):
-        self.list_service = WordListService()
+        self.list_service = ListService()
 
     def get(self):
         """Display the new list form"""
@@ -41,10 +41,10 @@ class NewListView(MethodView):
 
 
 class ListDetailView(MethodView):
-    """View for displaying list details and managing words"""
+    """View for displaying list details and managing entries"""
 
     def __init__(self):
-        self.list_service = WordListService()
+        self.list_service = ListService()
 
     def get(self, list_id):
         """Display list details with all words"""
@@ -55,20 +55,58 @@ class ListDetailView(MethodView):
         return render_template('list_detail.html', word_list=word_list)
 
 
-class AddWordView(MethodView):
-    """View for adding a word to a list"""
+class AddEntryView(MethodView):
+    """View for adding an entry to a list"""
 
     def __init__(self):
-        self.list_service = WordListService()
+        self.list_service = ListService()
 
     def post(self, list_id):
-        """Add a new word to the list"""
+        """Add a new entry to the list"""
         source_word = request.form.get('source_word')
         target_word = request.form.get('target_word')
+        entry_type = request.form.get('entry_type', 'word')
 
         try:
-            self.list_service.add_word_to_list(list_id, source_word, target_word)
-            flash('Woord toegevoegd!', 'success')
+            self.list_service.add_entry_to_list(list_id, source_word, target_word, entry_type)
+            flash('Item toegevoegd!', 'success')
+        except ValueError as e:
+            flash(str(e), 'error')
+
+        return redirect(url_for('main.list_detail', list_id=list_id))
+
+
+class EditEntryView(MethodView):
+    """View for editing an entry"""
+
+    def __init__(self):
+        self.list_service = ListService()
+
+    def get(self, entry_id):
+        """Display the edit form"""
+        entry = self.list_service.get_entry_by_id(entry_id)
+        if not entry:
+            flash('Item niet gevonden', 'error')
+            return redirect(url_for('main.index'))
+
+        word_list = self.list_service.get_list_by_id(entry.list_id)
+        return render_template('edit_entry.html', entry=entry, word_list=word_list)
+
+    def post(self, entry_id):
+        """Update the entry"""
+        entry = self.list_service.get_entry_by_id(entry_id)
+        if not entry:
+            flash('Item niet gevonden', 'error')
+            return redirect(url_for('main.index'))
+
+        list_id = entry.list_id
+        source_word = request.form.get('source_word')
+        target_word = request.form.get('target_word')
+        entry_type = request.form.get('entry_type', 'word')
+
+        try:
+            self.list_service.update_entry(entry_id, source_word, target_word, entry_type)
+            flash('Item bijgewerkt!', 'success')
         except ValueError as e:
             flash(str(e), 'error')
 
@@ -76,10 +114,10 @@ class AddWordView(MethodView):
 
 
 class DeleteListView(MethodView):
-    """View for deleting a word list"""
+    """View for deleting a list"""
 
     def __init__(self):
-        self.list_service = WordListService()
+        self.list_service = ListService()
 
     def post(self, list_id):
         """Delete the word list"""
@@ -92,17 +130,17 @@ class DeleteListView(MethodView):
         return redirect(url_for('main.index'))
 
 
-class DeleteWordView(MethodView):
-    """View for deleting a word"""
+class DeleteEntryView(MethodView):
+    """View for deleting an entry"""
 
     def __init__(self):
-        self.list_service = WordListService()
+        self.list_service = ListService()
 
-    def post(self, word_id):
-        """Delete the word"""
+    def post(self, entry_id):
+        """Delete the entry"""
         try:
-            list_id = self.list_service.delete_word(word_id)
-            flash('Woord verwijderd', 'success')
+            list_id = self.list_service.delete_entry(entry_id)
+            flash('Item verwijderd', 'success')
             return redirect(url_for('main.list_detail', list_id=list_id))
         except ValueError as e:
             flash(str(e), 'error')
@@ -114,7 +152,7 @@ class QuizView(MethodView):
 
     def __init__(self):
         self.quiz_service = QuizService()
-        self.list_service = WordListService()
+        self.list_service = ListService()
 
     def get(self, list_id):
         """Display the current quiz question or results"""
@@ -124,7 +162,7 @@ class QuizView(MethodView):
             return redirect(url_for('main.index'))
 
         # Initialize quiz if needed
-        if 'quiz_words' not in session or session.get('quiz_list_id') != list_id:
+        if 'quiz_entries' not in session or session.get('quiz_list_id') != list_id:
             try:
                 quiz_data = self.quiz_service.initialize_quiz(list_id)
                 session.update(quiz_data)
@@ -136,7 +174,7 @@ class QuizView(MethodView):
         if self.quiz_service.is_quiz_complete(session):
             results = self.quiz_service.get_quiz_results(session)
             # Clear session
-            session.pop('quiz_words', None)
+            session.pop('quiz_entries', None)
             session.pop('quiz_list_id', None)
             session.pop('quiz_index', None)
             session.pop('quiz_score', None)
@@ -146,13 +184,13 @@ class QuizView(MethodView):
                                  word_list=word_list)
 
         # Get current question
-        word, progress = self.quiz_service.get_current_question(session)
-        if not word:
+        entry, progress = self.quiz_service.get_current_question(session)
+        if not entry:
             flash('Er is een fout opgetreden', 'error')
             return redirect(url_for('main.list_detail', list_id=list_id))
 
         return render_template('quiz.html',
-                             word=word,
+                             entry=entry,
                              word_list=word_list,
                              progress=progress)
 
@@ -165,21 +203,21 @@ class QuizAnswerView(MethodView):
 
     def post(self, list_id):
         """Check the user's answer and advance quiz"""
-        word_id = request.form.get('word_id', type=int)
+        entry_id = request.form.get('entry_id', type=int)
         user_answer = request.form.get('answer', '')
 
         try:
-            is_correct, correct_answer = self.quiz_service.check_answer(word_id, user_answer)
+            is_correct, correct_answer = self.quiz_service.check_answer(entry_id, user_answer)
 
             # Get source word for flash message
-            from app.repositories import WordRepository
-            word_repo = WordRepository()
-            word = word_repo.get_by_id(word_id)
+            from app.repositories import EntryRepository
+            entry_repo = EntryRepository()
+            entry = entry_repo.get_by_id(entry_id)
 
             if is_correct:
-                flash(f'Correct! {word.source_word} = {correct_answer}', 'success')
+                flash(f'Correct! {entry.source_word} = {correct_answer}', 'success')
             else:
-                flash(f'Fout! {word.source_word} = {correct_answer} (jij antwoordde: {user_answer})', 'error')
+                flash(f'Fout! {entry.source_word} = {correct_answer} (jij antwoordde: {user_answer})', 'error')
 
             # Advance quiz
             quiz_data = self.quiz_service.advance_quiz(dict(session), is_correct)

@@ -11,11 +11,11 @@
 
     <div class="quiz-question">
         <p class="question-label">Wat is de {{ word_list.target_language }} vertaling van:</p>
-        <h3 class="source-word">{{ word.source_word }}</h3>
+        <h3 class="source-word">{{ entry.source_word }}</h3>
     </div>
 
     <form method="POST" action="{{ url_for('main.quiz_answer', list_id=word_list.id) }}" class="quiz-form">
-        <input type="hidden" name="word_id" value="{{ word.id }}">
+        <input type="hidden" name="entry_id" value="{{ entry.id }}">
         <div class="form-group">
             <input type="text" name="answer" id="answer" required autofocus autocomplete="off" placeholder="Type je antwoord...">
         </div>

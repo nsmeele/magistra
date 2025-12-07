@@ -11,10 +11,10 @@
             <div class="list-card">
                 <h3><a href="{{ url_for('main.list_detail', list_id=list.id) }}">{{ list.name }}</a></h3>
                 <p class="languages">{{ list.source_language }} → {{ list.target_language }}</p>
-                <p class="word-count">{{ list.words|length }} woord{% if list.words|length != 1 %}en{% endif %}</p>
+                <p class="word-count">{{ list.entries|length }} item{% if list.entries|length != 1 %}s{% endif %}</p>
                 <div class="card-actions">
                     <a href="{{ url_for('main.list_detail', list_id=list.id) }}" class="btn btn-secondary">Bekijken</a>
-                    {% if list.words %}
+                    {% if list.entries %}
                         <a href="{{ url_for('main.quiz', list_id=list.id) }}" class="btn btn-primary">Oefenen</a>
                     {% endif %}
                 </div>

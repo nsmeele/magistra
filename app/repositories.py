@@ -1,6 +1,6 @@
-from typing import List, Optional
+from typing import List as ListType, Optional
 from app import db
-from app.models import WordList, Word
+from app.models import List, Entry
 
 
 class BaseRepository:
@@ -13,7 +13,7 @@ class BaseRepository:
         """Get a single record by ID"""
         return self.model.query.get(id)
 
-    def get_all(self) -> List[object]:
+    def get_all(self) -> ListType[object]:
         """Get all records"""
         return self.model.query.all()
 
@@ -37,22 +37,22 @@ class BaseRepository:
         db.session.commit()
 
 
-class WordListRepository(BaseRepository):
-    """Repository for WordList operations"""
+class ListRepository(BaseRepository):
+    """Repository for List operations"""
 
     def __init__(self):
-        super().__init__(WordList)
+        super().__init__(List)
 
-    def get_all_ordered(self) -> List[WordList]:
-        """Get all word lists ordered by creation date (newest first)"""
+    def get_all_ordered(self) -> ListType['List']:
+        """Get all lists ordered by creation date (newest first)"""
         return self.model.query.order_by(self.model.created_at.desc()).all()
 
-    def get_with_words(self, list_id: int) -> Optional[WordList]:
-        """Get a word list with all its words loaded"""
+    def get_with_entries(self, list_id: int) -> Optional['List']:
+        """Get a list with all its entries loaded"""
         return self.model.query.filter_by(id=list_id).first()
 
-    def create_list(self, name: str, source_language: str, target_language: str) -> WordList:
-        """Create a new word list"""
+    def create_list(self, name: str, source_language: str, target_language: str) -> 'List':
+        """Create a new list"""
         return self.create(
             name=name,
             source_language=source_language,
@@ -60,33 +60,34 @@ class WordListRepository(BaseRepository):
         )
 
 
-class WordRepository(BaseRepository):
-    """Repository for Word operations"""
+class EntryRepository(BaseRepository):
+    """Repository for Entry operations"""
 
     def __init__(self):
-        super().__init__(Word)
+        super().__init__(Entry)
 
-    def get_by_list(self, list_id: int) -> List[Word]:
-        """Get all words for a specific list"""
+    def get_by_list(self, list_id: int) -> ListType[Entry]:
+        """Get all entries for a specific list"""
         return self.model.query.filter_by(list_id=list_id).all()
 
-    def create_word(self, list_id: int, source_word: str, target_word: str) -> Word:
-        """Create a new word"""
+    def create_entry(self, list_id: int, source_word: str, target_word: str, entry_type: str = 'word') -> Entry:
+        """Create a new entry"""
         return self.create(
             list_id=list_id,
             source_word=source_word,
-            target_word=target_word
+            target_word=target_word,
+            entry_type=entry_type
         )
 
-    def update_score(self, word: Word, is_correct: bool) -> Word:
-        """Update word score based on quiz answer"""
+    def update_score(self, entry: Entry, is_correct: bool) -> Entry:
+        """Update entry score based on quiz answer"""
         if is_correct:
-            word.correct_count += 1
+            entry.correct_count += 1
         else:
-            word.incorrect_count += 1
+            entry.incorrect_count += 1
         db.session.commit()
-        return word
+        return entry
 
-    def get_words_by_ids(self, word_ids: List[int]) -> List[Word]:
-        """Get multiple words by their IDs"""
-        return self.model.query.filter(self.model.id.in_(word_ids)).all()
+    def get_entries_by_ids(self, entry_ids: ListType[int]) -> ListType[Entry]:
+        """Get multiple entries by their IDs"""
+        return self.model.query.filter(self.model.id.in_(entry_ids)).all()

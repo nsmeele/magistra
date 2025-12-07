@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Item Bewerken - {{ word_list.name }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Item Bewerken</h2>
+    <p class="subtitle">{{ word_list.name }} - {{ word_list.source_language }} → {{ word_list.target_language }}</p>
+
+    <form method="POST" action="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="form">
+        <div class="form-group">
+            <label for="entry_type">Type:</label>
+            <select id="entry_type" name="entry_type" required>
+                <option value="word" {% if entry.entry_type == 'word' %}selected{% endif %}>Woord</option>
+                <option value="sentence" {% if entry.entry_type == 'sentence' %}selected{% endif %}>Zin</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="source_word">{{ word_list.source_language }}:</label>
+            <input type="text" id="source_word" name="source_word" value="{{ entry.source_word }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="target_word">{{ word_list.target_language }}:</label>
+            <input type="text" id="target_word" name="target_word" value="{{ entry.target_word }}" required>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Bijwerken</button>
+            <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary">Annuleren</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
