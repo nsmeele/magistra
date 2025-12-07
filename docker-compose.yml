@@ -25,6 +25,7 @@ services:
     command: sh -c "corepack enable && yarn install"
     volumes:
       - ./assets:/app/assets
+      - ./templates:/app/templates
       - ./static/dist:/app/static/dist
       - ./package.json:/app/package.json
       - ./vite.config.js:/app/vite.config.js

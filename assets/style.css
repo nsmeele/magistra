@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@source "./../templates/*.html";
+
 body {
     @apply font-sans leading-normal text-gray-800 bg-gray-100 min-h-screen flex flex-col;
 }
