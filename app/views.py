@@ -1,5 +1,6 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask.views import MethodView
+from markupsafe import escape
 
 from app.ai_service import AIService
 from app.forms import (
@@ -48,6 +49,18 @@ class IndexView(MethodView):
         )
 
 
+class AllEntriesView(MethodView):
+    """View for displaying all entries from all lists"""
+
+    def __init__(self):
+        self.list_service = ListService()
+
+    def get(self):
+        """Display all entries from all lists"""
+        entries = self.list_service.get_all_entries()
+        return render_template("all_entries.html", entries=entries)
+
+
 class NewListView(MethodView):
     """View for creating a new list"""
 
@@ -74,8 +87,8 @@ class NewListView(MethodView):
                 category_id = form.category_id.data if form.category_id.data else None
                 word_list = self.list_service.create_list(
                     form.name.data,
-                    form.source_language.data,
-                    form.target_language.data,
+                    form.source_language_id.data,
+                    form.target_language_id.data,
                     category_id=category_id,
                 )
                 flash("Lijst aangemaakt!", "success")
@@ -411,10 +424,10 @@ class QuizAnswerView(MethodView):
                 )
 
                 if is_correct:
-                    flash(f"Correct! {question_word} = {correct_answer}", "success")
+                    flash(f"Correct! {escape(question_word)} = {escape(correct_answer)}", "success")
                 else:
                     flash(
-                        f"Fout! {question_word} = {correct_answer} (jij antwoordde: {user_answer})",
+                        f"Fout! {escape(question_word)} = {escape(correct_answer)} (jij antwoordde: {escape(user_answer)})",
                         "error",
                     )
 
@@ -634,10 +647,10 @@ class MixedQuizAnswerView(MethodView):
                 )
 
                 if is_correct:
-                    flash(f"Correct! {question_word} = {correct_answer}", "success")
+                    flash(f"Correct! {escape(question_word)} = {escape(correct_answer)}", "success")
                 else:
                     flash(
-                        f"Fout! {question_word} = {correct_answer} (jij antwoordde: {user_answer})",
+                        f"Fout! {escape(question_word)} = {escape(correct_answer)} (jij antwoordde: {escape(user_answer)})",
                         "error",
                     )
 
@@ -879,12 +892,29 @@ class AIGenerateView(MethodView):
 
         if form.validate_on_submit():
             try:
+                # Get language objects from IDs
+                source_language = self.language_service.get_language_by_id(
+                    form.source_language_id.data
+                )
+                target_language = self.language_service.get_language_by_id(
+                    form.target_language_id.data
+                )
+
+                if not source_language or not target_language:
+                    flash("Ongeldige taal geselecteerd", "error")
+                    return render_template(
+                        "ai_generate.html",
+                        form=form,
+                        providers=providers,
+                        generated_items=None,
+                    )
+
                 count = int(form.count.data) if form.count.data else None
                 items = self.ai_service.generate_list(
                     provider_key=form.provider.data,
                     topic=form.topic.data,
-                    source_language=form.source_language.data,
-                    target_language=form.target_language.data,
+                    source_language=source_language.name,
+                    target_language=target_language.name,
                     entry_type=form.entry_type.data,
                     count=count,
                 )
@@ -893,8 +923,10 @@ class AIGenerateView(MethodView):
                 session["ai_generated_items"] = items
                 session["ai_generated_meta"] = {
                     "topic": form.topic.data,
-                    "source_language": form.source_language.data,
-                    "target_language": form.target_language.data,
+                    "source_language_id": source_language.id,
+                    "target_language_id": target_language.id,
+                    "source_language_name": source_language.name,
+                    "target_language_name": target_language.name,
                     "entry_type": form.entry_type.data,
                 }
 
@@ -955,8 +987,8 @@ class AISaveListView(MethodView):
             # Create the list
             word_list = self.list_service.create_list(
                 form.list_name.data,
-                meta["source_language"],
-                meta["target_language"],
+                meta["source_language_id"],
+                meta["target_language_id"],
             )
 
             # Add all items

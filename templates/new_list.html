@@ -5,7 +5,7 @@
 {% block content %}
 <h2>Nieuwe Woordenlijst</h2>
 
-<form method="POST" class="form">
+<form method="POST" class="form" id="newListForm">
     {{ form.hidden_tag() }}
     <div class="form-group">
         {{ form.name.label }}
@@ -16,18 +16,18 @@
     </div>
 
     <div class="form-group">
-        {{ form.source_language.label(text="Van (taal):") }}
-        {{ form.source_language(class="form-control") }}
-        {% if form.source_language.errors %}
-            <span class="error">{{ form.source_language.errors[0] }}</span>
+        {{ form.source_language_id.label(text="Van (taal):") }}
+        {{ form.source_language_id(class="form-control", id="source_language_id") }}
+        {% if form.source_language_id.errors %}
+            <span class="error">{{ form.source_language_id.errors[0] }}</span>
         {% endif %}
     </div>
 
     <div class="form-group">
-        {{ form.target_language.label(text="Naar (taal):") }}
-        {{ form.target_language(class="form-control") }}
-        {% if form.target_language.errors %}
-            <span class="error">{{ form.target_language.errors[0] }}</span>
+        {{ form.target_language_id.label(text="Naar (taal):") }}
+        {{ form.target_language_id(class="form-control", id="target_language_id") }}
+        {% if form.target_language_id.errors %}
+            <span class="error">{{ form.target_language_id.errors[0] }}</span>
         {% endif %}
     </div>
 
@@ -44,4 +44,53 @@
         <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Annuleren</a>
     </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sourceSelect = document.getElementById('source_language_id');
+    const targetSelect = document.getElementById('target_language_id');
+
+    function validateLanguageSelection() {
+        const sourceValue = sourceSelect.value;
+        const targetValue = targetSelect.value;
+
+        // Disable the selected source language in target dropdown
+        Array.from(targetSelect.options).forEach(option => {
+            if (option.value === sourceValue && option.value !== '') {
+                option.disabled = true;
+            } else {
+                option.disabled = false;
+            }
+        });
+
+        // Disable the selected target language in source dropdown
+        Array.from(sourceSelect.options).forEach(option => {
+            if (option.value === targetValue && option.value !== '') {
+                option.disabled = true;
+            } else {
+                option.disabled = false;
+            }
+        });
+
+        // If same language is selected, reset the other dropdown
+        if (sourceValue === targetValue && sourceValue !== '') {
+            // If user just changed source, reset target
+            if (document.activeElement === sourceSelect) {
+                targetSelect.value = '';
+            }
+            // If user just changed target, reset source
+            else if (document.activeElement === targetSelect) {
+                sourceSelect.value = '';
+            }
+        }
+    }
+
+    // Run validation on change
+    sourceSelect.addEventListener('change', validateLanguageSelection);
+    targetSelect.addEventListener('change', validateLanguageSelection);
+
+    // Run initial validation on page load
+    validateLanguageSelection();
+});
+</script>
 {% endblock %}

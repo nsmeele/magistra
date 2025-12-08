@@ -35,9 +35,9 @@
                     </div>
                     {% if entry.success_rate is not none %}
                         <div class="mt-2">
-                            <span class="inline-block text-sm font-semibold mb-1">{{ entry.success_rate }}%</span>
+                            <span class="inline-block text-sm font-semibold mb-1">{{ entry.success_rate | safe_percent }}%</span>
                             <div class="h-1.5 bg-gray-200 rounded-sm overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-red-500 via-orange-500 to-green-500 transition-[width] duration-300" style="width: {{ entry.success_rate }}%"></div>
+                                <div class="h-full bg-gradient-to-r from-red-500 via-orange-500 to-green-500 transition-[width] duration-300" style="width: {{ entry.success_rate | safe_percent }}%"></div>
                             </div>
                         </div>
                     {% endif %}

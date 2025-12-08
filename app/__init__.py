@@ -18,6 +18,16 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
 
+    # Custom Jinja2 filter for safe percentage values
+    @app.template_filter('safe_percent')
+    def safe_percent_filter(value):
+        """Ensure a value is a valid percentage between 0-100"""
+        try:
+            num = float(value)
+            return max(0.0, min(100.0, num))
+        except (ValueError, TypeError):
+            return 0.0
+
     # Vite manifest helpers
     @app.context_processor
     def vite_helpers():

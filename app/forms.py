@@ -1,32 +1,37 @@
 from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, Length
+from wtforms.validators import DataRequired, Length, ValidationError
 
 
 class NewListForm(FlaskForm):
     """Form voor het aanmaken van een nieuwe lijst"""
 
     name = StringField("Naam", validators=[DataRequired(), Length(min=1, max=100)])
-    source_language = SelectField("Brontaal", validators=[DataRequired()])
-    target_language = SelectField("Doeltaal", validators=[DataRequired()])
+    source_language_id = SelectField("Brontaal", coerce=int, validators=[DataRequired()])
+    target_language_id = SelectField("Doeltaal", coerce=int, validators=[DataRequired()])
     category_id = SelectField("Categorie", coerce=int)
     submit = SubmitField("Lijst Aanmaken")
 
     def __init__(self, languages=None, categories=None, *args, **kwargs):
         super(NewListForm, self).__init__(*args, **kwargs)
         if languages:
-            lang_choices = [(lang.name, lang.name) for lang in languages]
-            self.source_language.choices = lang_choices
-            self.target_language.choices = lang_choices
+            lang_choices = [(lang.id, lang.name) for lang in languages]
+            self.source_language_id.choices = lang_choices
+            self.target_language_id.choices = lang_choices
         else:
-            self.source_language.choices = []
-            self.target_language.choices = []
+            self.source_language_id.choices = []
+            self.target_language_id.choices = []
         if categories:
             self.category_id.choices = [(0, "Geen categorie")] + [
                 (cat.id, cat.name) for cat in categories
             ]
         else:
             self.category_id.choices = [(0, "Geen categorie")]
+
+    def validate_target_language_id(self, field):
+        """Validate that source and target languages are different"""
+        if field.data == self.source_language_id.data:
+            raise ValidationError("Bron- en doeltaal moeten verschillend zijn")
 
 
 class LanguageFilterForm(FlaskForm):
@@ -133,12 +138,14 @@ class AIGenerateForm(FlaskForm):
         choices=[("word", "Woorden"), ("sentence", "Zinnen")],
         validators=[DataRequired()],
     )
-    source_language = SelectField(
+    source_language_id = SelectField(
         "Brontaal",
+        coerce=int,
         validators=[DataRequired()],
     )
-    target_language = SelectField(
+    target_language_id = SelectField(
         "Doeltaal",
+        coerce=int,
         validators=[DataRequired()],
     )
     count = SelectField(
@@ -163,12 +170,17 @@ class AIGenerateForm(FlaskForm):
         else:
             self.provider.choices = []
         if languages:
-            lang_choices = [(lang.name, lang.name) for lang in languages]
-            self.source_language.choices = lang_choices
-            self.target_language.choices = lang_choices
+            lang_choices = [(lang.id, lang.name) for lang in languages]
+            self.source_language_id.choices = lang_choices
+            self.target_language_id.choices = lang_choices
         else:
-            self.source_language.choices = []
-            self.target_language.choices = []
+            self.source_language_id.choices = []
+            self.target_language_id.choices = []
+
+    def validate_target_language_id(self, field):
+        """Validate that source and target languages are different"""
+        if field.data == self.source_language_id.data:
+            raise ValidationError("Bron- en doeltaal moeten verschillend zijn")
 
 
 class SaveGeneratedListForm(FlaskForm):

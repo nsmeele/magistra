@@ -4,6 +4,7 @@ from app.views import (
     AddEntryView,
     AIGenerateView,
     AISaveListView,
+    AllEntriesView,
     DeleteEntryView,
     DeleteListView,
     EditEntryView,
@@ -29,6 +30,7 @@ bp = Blueprint("main", __name__)
 
 # Register class-based views
 bp.add_url_rule("/", view_func=IndexView.as_view("index"))
+bp.add_url_rule("/entries", view_func=AllEntriesView.as_view("all_entries"))
 bp.add_url_rule("/list/new", view_func=NewListView.as_view("new_list"))
 bp.add_url_rule("/list/<int:list_id>", view_func=ListDetailView.as_view("list_detail"))
 bp.add_url_rule(

@@ -11,14 +11,22 @@
 </head>
 <body>
     <nav>
-        <div class="container mx-auto flex justify-between align-center">
+        <div class="container mx-auto flex justify-between">
             <div class="nav-left">
                 <a class="font-bold" href="{{ url_for('main.index') }}">MAGISTRA</a>
-                <a href="{{ url_for('main.ai_generate') }}" class="nav-link"><i class="fa-solid fa-fw fa-wand-magic-sparkles"></i> AI Generator</a>
+                <a href="{{ url_for('main.index') }}" class="nav-link"><i class="fa-solid fa-fw fa-dashboard"></i> Dashboard</a>
+                <a href="{{ url_for('main.all_entries') }}" class="nav-link"><i class="fa-solid fa-fw fa-book"></i> Alle Woordjes</a>
                 <a href="{{ url_for('main.quiz_history') }}" class="nav-link"><i class="fa-solid fa-fw fa-history"></i> Geschiedenis</a>
                 <a href="{{ url_for('main.smart_practice') }}" class="nav-link"><i class="fa-solid fa-fw fa-brain"></i> Smart Practice</a>
             </div>
-            <a href="{{ url_for('main.new_list') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nieuwe Lijst</a>
+            <div class="flex items-center gap-4">
+                <a href="{{ url_for('main.ai_generate') }}" class="nav-link">
+                    <i class="fa-solid fa-fw fa-wand-magic-sparkles"></i> AI Generator
+                </a>
+                <a href="{{ url_for('main.new_list') }}" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Nieuwe Lijst
+                </a>
+            </div>
         </div>
     </nav>
 

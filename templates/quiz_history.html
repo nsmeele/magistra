@@ -38,7 +38,7 @@
                     <div class="text-right">
                         <span class="block font-semibold mb-2">{{ session.current_index }}/{{ session.total_questions }}</span>
                         <div class="w-30 h-2 bg-gray-200 rounded overflow-hidden">
-                            <div class="h-full bg-gradient-to-r from-fuchsia-400 to-rose-500 transition-[width] duration-300" style="width: {{ (session.current_index / session.total_questions * 100) if session.total_questions > 0 else 0 }}%"></div>
+                            <div class="h-full bg-gradient-to-r from-fuchsia-400 to-rose-500 transition-[width] duration-300" style="width: {{ ((session.current_index / session.total_questions * 100) if session.total_questions > 0 else 0) | safe_percent }}%"></div>
                         </div>
                     </div>
                 </div>

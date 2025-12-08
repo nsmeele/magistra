@@ -97,15 +97,15 @@ class ListRepository(BaseRepository):
     def create_list(
         self,
         name: str,
-        source_language: str,
-        target_language: str,
+        source_language_id: int,
+        target_language_id: int,
         category_id: Optional[int] = None,
     ) -> "List":
         """Create a new list"""
         return self.create(
             name=name,
-            source_language=source_language,
-            target_language=target_language,
+            source_language_id=source_language_id,
+            target_language_id=target_language_id,
             category_id=category_id,
         )
 
@@ -143,3 +143,11 @@ class EntryRepository(BaseRepository):
     def get_entries_by_ids(self, entry_ids: ListType[int]) -> ListType[Entry]:
         """Get multiple entries by their IDs"""
         return self.model.query.filter(self.model.id.in_(entry_ids)).all()
+
+    def get_all_with_list(self) -> ListType[Entry]:
+        """Get all entries with their list data, ordered by creation date"""
+        return (
+            self.model.query.join(List)
+            .order_by(self.model.created_at.desc())
+            .all()
+        )

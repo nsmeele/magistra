@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Alle Woordjes - Magistra{% endblock %}
+
+{% block content %}
+<div class="list-header">
+    <div>
+        <h2>Alle Woordjes</h2>
+        <p class="text-gray-600">Overzicht van alle woorden en zinnen uit al je lijsten</p>
+    </div>
+</div>
+
+{% if entries %}
+    <p class="mb-4"><strong>Totaal:</strong> {{ entries|length }} items</p>
+    <table class="words-table">
+        <thead>
+            <tr>
+                <th>Brontaal</th>
+                <th>Doeltaal</th>
+                <th>Acties</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+                <tr>
+                    <td>{{ entry.source_word }}</td>
+                    <td>{{ entry.target_word }}</td>
+                    <td>
+                        <a href="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="btn btn-small btn-secondary"><i class="fa-solid fa-edit"></i></a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p class="empty-state">Je hebt nog geen woordjes toegevoegd. Maak eerst een lijst aan en voeg items toe!</p>
+{% endif %}
+{% endblock %}

@@ -84,18 +84,24 @@ class ListService:
         """Get a specific entry"""
         return self.entry_repo.get_by_id(entry_id)
 
+    def get_all_entries(self) -> ListType[Entry]:
+        """Get all entries from all lists"""
+        return self.entry_repo.get_all_with_list()
+
     def create_list(
         self,
         name: str,
-        source_language: str,
-        target_language: str,
+        source_language_id: int,
+        target_language_id: int,
         category_id: Optional[int] = None,
     ) -> List:
         """Create a new list"""
-        if not all([name, source_language, target_language]):
+        if not all([name, source_language_id, target_language_id]):
             raise ValueError("All fields are required")
+        if source_language_id == target_language_id:
+            raise ValueError("Source and target languages must be different")
         return self.list_repo.create_list(
-            name, source_language, target_language, category_id
+            name, source_language_id, target_language_id, category_id
         )
 
     def delete_list(self, list_id: int) -> None:
