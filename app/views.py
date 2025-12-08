@@ -35,9 +35,7 @@ class IndexView(MethodView):
             form.language_id.data = language_id
             selected_language = self.language_service.get_language_by_id(language_id)
             # Filter op language_name zodat zowel source als target taal matchen
-            lists = self.list_service.get_all_lists(
-                language_name=selected_language.name if selected_language else None
-            )
+            lists = self.list_service.get_all_lists(language=selected_language)
         else:
             lists = self.list_service.get_all_lists()
 
@@ -78,7 +76,6 @@ class NewListView(MethodView):
                     form.name.data,
                     form.source_language.data,
                     form.target_language.data,
-                    language_id=form.language_id.data,
                     category_id=category_id,
                 )
                 flash("Lijst aangemaakt!", "success")
@@ -475,7 +472,7 @@ class MixedQuizView(MethodView):
         # Group lists by language pair
         language_pairs = {}
         for lst in all_lists:
-            key = f"{lst.source_language} → {lst.target_language}"
+            key = f"{lst.source_language.name} → {lst.target_language.name}"
             if key not in language_pairs:
                 language_pairs[key] = []
             language_pairs[key].append(lst)
@@ -852,10 +849,12 @@ class AIGenerateView(MethodView):
     def __init__(self):
         self.ai_service = AIService()
         self.list_service = ListService()
+        self.language_service = LanguageService()
 
     def get(self):
         """Display the AI generation form"""
         providers = self.ai_service.get_available_providers()
+        languages = self.language_service.get_all_languages()
         available_providers = [p for p in providers if p["available"]]
 
         if not available_providers:
@@ -867,7 +866,7 @@ class AIGenerateView(MethodView):
                 "ai_generate.html", form=None, providers=providers, generated_items=None
             )
 
-        form = AIGenerateForm(providers=providers)
+        form = AIGenerateForm(providers=providers, languages=languages)
         return render_template(
             "ai_generate.html", form=form, providers=providers, generated_items=None
         )
@@ -875,7 +874,8 @@ class AIGenerateView(MethodView):
     def post(self):
         """Handle AI generation request"""
         providers = self.ai_service.get_available_providers()
-        form = AIGenerateForm(providers=providers)
+        languages = self.language_service.get_all_languages()
+        form = AIGenerateForm(providers=providers, languages=languages)
 
         if form.validate_on_submit():
             try:

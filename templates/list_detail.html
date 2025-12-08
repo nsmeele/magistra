@@ -6,7 +6,7 @@
 <div class="list-header">
     <div>
         <h2>{{ word_list.name }}</h2>
-        <p class="languages">{{ word_list.source_language }} → {{ word_list.target_language }}</p>
+        <p class="languages">{{ word_list.source_language.name }} → {{ word_list.target_language.name }}</p>
     </div>
     <div class="header-actions">
         {% if word_list.entries %}
@@ -28,11 +28,11 @@
         {{ form.entry_type(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="source_word">{{ word_list.source_language }}:</label>
+        <label for="source_word">{{ word_list.source_language.name }}:</label>
         {{ form.source_word(class="form-control") }}
     </div>
     <div class="form-group">
-        <label for="target_word">{{ word_list.target_language }}:</label>
+        <label for="target_word">{{ word_list.target_language.name }}:</label>
         {{ form.target_word(class="form-control") }}
     </div>
     {{ form.submit(class="btn btn-primary") }}
@@ -44,8 +44,8 @@
         <thead>
             <tr>
                 <th>Type</th>
-                <th>{{ word_list.source_language }}</th>
-                <th>{{ word_list.target_language }}</th>
+                <th>{{ word_list.source_language.name }}</th>
+                <th>{{ word_list.target_language.name }}</th>
                 <th>Score</th>
                 <th>Acties</th>
             </tr>

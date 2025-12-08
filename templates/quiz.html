@@ -11,10 +11,10 @@
 
     <div class="quiz-question">
         {% if direction == 'forward' %}
-            <p class="question-label">Wat is de {{ word_list.target_language }} vertaling van:</p>
+            <p class="question-label">Wat is de {{ word_list.target_language.name }} vertaling van:</p>
             <h3 class="source-word">{{ entry.source_word }}</h3>
         {% else %}
-            <p class="question-label">Wat is de {{ word_list.source_language }} vertaling van:</p>
+            <p class="question-label">Wat is de {{ word_list.source_language.name }} vertaling van:</p>
             <h3 class="source-word">{{ entry.target_word }}</h3>
         {% endif %}
     </div>

@@ -1091,6 +1091,14 @@ def seed_extended_latin_verbs():
             db.session.add(latin_language)
             db.session.commit()
 
+        # Get or create Engels language
+        english_language = Language.query.filter_by(code="en").first()
+        if not english_language:
+            print("Engels language not found, creating it...")
+            english_language = Language(name="Engels", code="en")
+            db.session.add(english_language)
+            db.session.commit()
+
         # Check if lists already exist (both new and old names)
         list_names = [verb["name"] for verb in verbs_data]
         all_names_to_check = list_names + old_list_names
@@ -1112,9 +1120,8 @@ def seed_extended_latin_verbs():
 
             verb_list = List(
                 name=verb_data["name"],
-                source_language="Latin",
-                target_language="English",
-                language_id=latin_language.id,
+                source_language=latin_language,
+                target_language=english_language,
             )
             db.session.add(verb_list)
             db.session.flush()

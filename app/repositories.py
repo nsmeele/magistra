@@ -73,20 +73,17 @@ class ListRepository(BaseRepository):
 
     def get_all_ordered(
         self,
-        language_id: Optional[int] = None,
-        language_name: Optional[str] = None,
+        language: Optional[Language] = None,
         category_id: Optional[int] = None,
     ) -> ListType["List"]:
         """Get all lists ordered by creation date (newest first), optionally filtered"""
         query = self.model.query
-        if language_id:
-            query = query.filter_by(language_id=language_id)
-        if language_name:
+        if language:
             # Filter op lijsten waar de taal voorkomt in source OF target
             query = query.filter(
                 db.or_(
-                    self.model.source_language.ilike(language_name),
-                    self.model.target_language.ilike(language_name),
+                    self.model.source_language_id == language.id,
+                    self.model.target_language_id == language.id,
                 )
             )
         if category_id:
@@ -102,7 +99,6 @@ class ListRepository(BaseRepository):
         name: str,
         source_language: str,
         target_language: str,
-        language_id: Optional[int] = None,
         category_id: Optional[int] = None,
     ) -> "List":
         """Create a new list"""
@@ -110,7 +106,6 @@ class ListRepository(BaseRepository):
             name=name,
             source_language=source_language,
             target_language=target_language,
-            language_id=language_id,
             category_id=category_id,
         )
 

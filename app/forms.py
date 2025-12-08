@@ -7,22 +7,20 @@ class NewListForm(FlaskForm):
     """Form voor het aanmaken van een nieuwe lijst"""
 
     name = StringField("Naam", validators=[DataRequired(), Length(min=1, max=100)])
-    language_id = SelectField("Taal", coerce=int, validators=[DataRequired()])
+    source_language = SelectField("Brontaal", validators=[DataRequired()])
+    target_language = SelectField("Doeltaal", validators=[DataRequired()])
     category_id = SelectField("Categorie", coerce=int)
-    source_language = StringField(
-        "Brontaal", validators=[DataRequired(), Length(min=1, max=50)]
-    )
-    target_language = StringField(
-        "Doeltaal", validators=[DataRequired(), Length(min=1, max=50)]
-    )
     submit = SubmitField("Lijst Aanmaken")
 
     def __init__(self, languages=None, categories=None, *args, **kwargs):
         super(NewListForm, self).__init__(*args, **kwargs)
         if languages:
-            self.language_id.choices = [(lang.id, lang.name) for lang in languages]
+            lang_choices = [(lang.name, lang.name) for lang in languages]
+            self.source_language.choices = lang_choices
+            self.target_language.choices = lang_choices
         else:
-            self.language_id.choices = []
+            self.source_language.choices = []
+            self.target_language.choices = []
         if categories:
             self.category_id.choices = [(0, "Geen categorie")] + [
                 (cat.id, cat.name) for cat in categories
@@ -107,8 +105,8 @@ class QuizDirectionForm(FlaskForm):
         if source_language and target_language:
             self.direction.choices = [
                 ("random", "Willekeurig (beide richtingen)"),
-                ("forward", f"{source_language} → {target_language}"),
-                ("reverse", f"{target_language} → {source_language}"),
+                ("forward", f"{source_language.name} → {target_language.name}"),
+                ("reverse", f"{target_language.name} → {source_language.name}"),
             ]
         else:
             # Fallback voor als er geen talen zijn meegegeven
@@ -135,13 +133,13 @@ class AIGenerateForm(FlaskForm):
         choices=[("word", "Woorden"), ("sentence", "Zinnen")],
         validators=[DataRequired()],
     )
-    source_language = StringField(
+    source_language = SelectField(
         "Brontaal",
-        validators=[DataRequired(), Length(min=1, max=50)],
+        validators=[DataRequired()],
     )
-    target_language = StringField(
+    target_language = SelectField(
         "Doeltaal",
-        validators=[DataRequired(), Length(min=1, max=50)],
+        validators=[DataRequired()],
     )
     count = SelectField(
         "Aantal items",
@@ -156,7 +154,7 @@ class AIGenerateForm(FlaskForm):
     )
     submit = SubmitField("Genereer Lijst")
 
-    def __init__(self, providers=None, *args, **kwargs):
+    def __init__(self, providers=None, languages=None, *args, **kwargs):
         super(AIGenerateForm, self).__init__(*args, **kwargs)
         if providers:
             self.provider.choices = [
@@ -164,6 +162,13 @@ class AIGenerateForm(FlaskForm):
             ]
         else:
             self.provider.choices = []
+        if languages:
+            lang_choices = [(lang.name, lang.name) for lang in languages]
+            self.source_language.choices = lang_choices
+            self.target_language.choices = lang_choices
+        else:
+            self.source_language.choices = []
+            self.target_language.choices = []
 
 
 class SaveGeneratedListForm(FlaskForm):

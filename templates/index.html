@@ -38,7 +38,7 @@
         {% for list in lists %}
             <div class="list-card">
                 <h3><a href="{{ url_for('main.list_detail', list_id=list.id) }}">{{ list.name }}</a></h3>
-                <p class="languages">{{ list.source_language }} → {{ list.target_language }}</p>
+                <p class="languages">{{ list.source_language.name }} → {{ list.target_language.name }}</p>
                 <p class="word-count">{{ list.entries|length }} item{% if list.entries|length != 1 %}s{% endif %}</p>
                 <div class="card-actions">
                     <a href="{{ url_for('main.list_detail', list_id=list.id) }}" class="btn btn-secondary"><i class="fas fa-eye"></i> Bekijken</a>

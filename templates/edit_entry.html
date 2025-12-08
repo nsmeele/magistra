@@ -5,7 +5,7 @@
 {% block content %}
 <div class="form-container">
     <h2>Item Bewerken</h2>
-    <p class="subtitle">{{ word_list.name }} - {{ word_list.source_language }} → {{ word_list.target_language }}</p>
+    <p class="subtitle">{{ word_list.name }} - {{ word_list.source_language.name }} → {{ word_list.target_language.name }}</p>
 
     <form method="POST" action="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="form">
         {{ form.hidden_tag() }}
@@ -18,7 +18,7 @@
         </div>
 
         <div class="form-group">
-            <label for="source_word">{{ word_list.source_language }}:</label>
+            <label for="source_word">{{ word_list.source_language.name }}:</label>
             {{ form.source_word(class="form-control") }}
             {% if form.source_word.errors %}
                 <span class="error">{{ form.source_word.errors[0] }}</span>
@@ -26,7 +26,7 @@
         </div>
 
         <div class="form-group">
-            <label for="target_word">{{ word_list.target_language }}:</label>
+            <label for="target_word">{{ word_list.target_language.name }}:</label>
             {{ form.target_word(class="form-control") }}
             {% if form.target_word.errors %}
                 <span class="error">{{ form.target_word.errors[0] }}</span>

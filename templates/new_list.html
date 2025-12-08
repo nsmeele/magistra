@@ -16,10 +16,18 @@
     </div>
 
     <div class="form-group">
-        {{ form.language_id.label(text="Taal (voor filtering):") }}
-        {{ form.language_id(class="form-control") }}
-        {% if form.language_id.errors %}
-            <span class="error">{{ form.language_id.errors[0] }}</span>
+        {{ form.source_language.label(text="Van (taal):") }}
+        {{ form.source_language(class="form-control") }}
+        {% if form.source_language.errors %}
+            <span class="error">{{ form.source_language.errors[0] }}</span>
+        {% endif %}
+    </div>
+
+    <div class="form-group">
+        {{ form.target_language.label(text="Naar (taal):") }}
+        {{ form.target_language(class="form-control") }}
+        {% if form.target_language.errors %}
+            <span class="error">{{ form.target_language.errors[0] }}</span>
         {% endif %}
     </div>
 
@@ -28,22 +36,6 @@
         {{ form.category_id(class="form-control") }}
         {% if form.category_id.errors %}
             <span class="error">{{ form.category_id.errors[0] }}</span>
-        {% endif %}
-    </div>
-
-    <div class="form-group">
-        {{ form.source_language.label(text="Van (taal):") }}
-        {{ form.source_language(class="form-control", placeholder="bijv. Nederlands") }}
-        {% if form.source_language.errors %}
-            <span class="error">{{ form.source_language.errors[0] }}</span>
-        {% endif %}
-    </div>
-
-    <div class="form-group">
-        {{ form.target_language.label(text="Naar (taal):") }}
-        {{ form.target_language(class="form-control", placeholder="bijv. Engels") }}
-        {% if form.target_language.errors %}
-            <span class="error">{{ form.target_language.errors[0] }}</span>
         {% endif %}
     </div>
 

@@ -67,14 +67,12 @@ class ListService:
 
     def get_all_lists(
         self,
-        language_id: Optional[int] = None,
-        language_name: Optional[str] = None,
+        language: Optional[Language] = None,
         category_id: Optional[int] = None,
     ) -> ListType[List]:
         """Get all lists ordered by creation date, optionally filtered"""
         return self.list_repo.get_all_ordered(
-            language_id=language_id,
-            language_name=language_name,
+            language=language,
             category_id=category_id,
         )
 
@@ -91,14 +89,13 @@ class ListService:
         name: str,
         source_language: str,
         target_language: str,
-        language_id: Optional[int] = None,
         category_id: Optional[int] = None,
     ) -> List:
         """Create a new list"""
         if not all([name, source_language, target_language]):
             raise ValueError("All fields are required")
         return self.list_repo.create_list(
-            name, source_language, target_language, language_id, category_id
+            name, source_language, target_language, category_id
         )
 
     def delete_list(self, list_id: int) -> None:

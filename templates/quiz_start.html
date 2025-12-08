@@ -5,7 +5,7 @@
 {% block content %}
 <div class="quiz-start">
     <h2>Quiz Starten: {{ word_list.name }}</h2>
-    <p class="languages">{{ word_list.source_language }} → {{ word_list.target_language }}</p>
+    <p class="languages">{{ word_list.source_language.name }} → {{ word_list.target_language.name }}</p>
     <p class="subtitle">Kies de richting waarin je wilt oefenen</p>
 
     <form method="POST" action="{{ url_for('main.quiz_start', list_id=word_list.id) }}" class="form">
@@ -16,8 +16,8 @@
             {{ form.direction(class="form-control") }}
             <p class="help-text">
                 <strong>Willekeurig:</strong> Bij elke vraag wordt willekeurig gekozen uit beide richtingen<br>
-                <strong>Brontaal → Doeltaal:</strong> Je krijgt een woord in {{ word_list.source_language }} en moet het in {{ word_list.target_language }} vertalen<br>
-                <strong>Doeltaal → Brontaal:</strong> Je krijgt een woord in {{ word_list.target_language }} en moet het in {{ word_list.source_language }} vertalen
+                <strong>Brontaal → Doeltaal:</strong> Je krijgt een woord in {{ word_list.source_language.name }} en moet het in {{ word_list.target_language.name }} vertalen<br>
+                <strong>Doeltaal → Brontaal:</strong> Je krijgt een woord in {{ word_list.target_language.name }} en moet het in {{ word_list.source_language.name }} vertalen
             </p>
         </div>
 
