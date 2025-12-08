@@ -140,7 +140,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
 const ctx = document.getElementById('scoreTrendChart').getContext('2d');
-const sessions = {{ sessions|tojson }};
+const sessions = [{% for s in sessions %}{{ s.to_dict()|tojson }}{% if not loop.last %},{% endif %}{% endfor %}];
 
 // Reverse to show oldest first in chart
 const reversedSessions = sessions.slice().reverse();

@@ -90,6 +90,19 @@ class QuizSession(db.Model):
             return 0
         return round((self.correct_answers / self.total_questions) * 100, 1)
 
+    def to_dict(self):
+        """Convert to dictionary for JSON serialization"""
+        return {
+            "id": self.id,
+            "quiz_type": self.quiz_type,
+            "direction": self.direction,
+            "total_questions": self.total_questions,
+            "correct_answers": self.correct_answers,
+            "score_percentage": self.score_percentage,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+        }
+
 
 class QuizAnswer(db.Model):
     __tablename__ = "quiz_answers"
