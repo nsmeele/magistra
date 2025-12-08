@@ -7,12 +7,13 @@ from app.forms import (
     AIGenerateForm,
     DeleteForm,
     EditEntryForm,
+    LanguageFilterForm,
     NewListForm,
     QuizAnswerForm,
     QuizDirectionForm,
     SaveGeneratedListForm,
 )
-from app.services import ListService, QuizService
+from app.services import CategoryService, LanguageService, ListService, QuizService
 
 
 class IndexView(MethodView):
@@ -20,11 +21,33 @@ class IndexView(MethodView):
 
     def __init__(self):
         self.list_service = ListService()
+        self.language_service = LanguageService()
 
     def get(self):
-        """Display all word lists"""
-        lists = self.list_service.get_all_lists()
-        return render_template("index.html", lists=lists)
+        """Display all word lists with optional language filter"""
+        languages = self.language_service.get_all_languages()
+        form = LanguageFilterForm(languages=languages)
+
+        # Get filter from query parameter
+        language_id = request.args.get("language_id", 0, type=int)
+        selected_language = None
+        if language_id:
+            form.language_id.data = language_id
+            selected_language = self.language_service.get_language_by_id(language_id)
+            # Filter op language_name zodat zowel source als target taal matchen
+            lists = self.list_service.get_all_lists(
+                language_name=selected_language.name if selected_language else None
+            )
+        else:
+            lists = self.list_service.get_all_lists()
+
+        return render_template(
+            "index.html",
+            lists=lists,
+            form=form,
+            languages=languages,
+            selected_language=selected_language,
+        )
 
 
 class NewListView(MethodView):
@@ -32,20 +55,31 @@ class NewListView(MethodView):
 
     def __init__(self):
         self.list_service = ListService()
+        self.language_service = LanguageService()
+        self.category_service = CategoryService()
 
     def get(self):
         """Display the new list form"""
-        form = NewListForm()
+        languages = self.language_service.get_all_languages()
+        categories = self.category_service.get_all_categories()
+        form = NewListForm(languages=languages, categories=categories)
         return render_template("new_list.html", form=form)
 
     def post(self):
         """Handle new list creation"""
-        form = NewListForm()
+        languages = self.language_service.get_all_languages()
+        categories = self.category_service.get_all_categories()
+        form = NewListForm(languages=languages, categories=categories)
 
         if form.validate_on_submit():
             try:
+                category_id = form.category_id.data if form.category_id.data else None
                 word_list = self.list_service.create_list(
-                    form.name.data, form.source_language.data, form.target_language.data
+                    form.name.data,
+                    form.source_language.data,
+                    form.target_language.data,
+                    language_id=form.language_id.data,
+                    category_id=category_id,
                 )
                 flash("Lijst aangemaakt!", "success")
                 return redirect(url_for("main.list_detail", list_id=word_list.id))
@@ -58,6 +92,8 @@ class NewListView(MethodView):
 class EditListView(MethodView):
     def __init__(self):
         self.list_service = ListService()
+        self.language_service = LanguageService()
+        self.category_service = CategoryService()
 
     def get(self, list_id):
         """Display the edit list form"""
@@ -66,7 +102,9 @@ class EditListView(MethodView):
             flash("Lijst niet gevonden", "error")
             return redirect(url_for("main.index"))
 
-        form = NewListForm(obj=word_list)
+        languages = self.language_service.get_all_languages()
+        categories = self.category_service.get_all_categories()
+        form = NewListForm(languages=languages, categories=categories, obj=word_list)
         return render_template("edit_list.html", form=form, word_list=word_list)
 
 
@@ -841,13 +879,14 @@ class AIGenerateView(MethodView):
 
         if form.validate_on_submit():
             try:
+                count = int(form.count.data) if form.count.data else None
                 items = self.ai_service.generate_list(
                     provider_key=form.provider.data,
                     topic=form.topic.data,
                     source_language=form.source_language.data,
                     target_language=form.target_language.data,
                     entry_type=form.entry_type.data,
-                    count=int(form.count.data),
+                    count=count,
                 )
 
                 # Store generated items in session for saving

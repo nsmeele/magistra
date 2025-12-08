@@ -7,6 +7,8 @@ class NewListForm(FlaskForm):
     """Form voor het aanmaken van een nieuwe lijst"""
 
     name = StringField("Naam", validators=[DataRequired(), Length(min=1, max=100)])
+    language_id = SelectField("Taal", coerce=int, validators=[DataRequired()])
+    category_id = SelectField("Categorie", coerce=int)
     source_language = StringField(
         "Brontaal", validators=[DataRequired(), Length(min=1, max=50)]
     )
@@ -14,6 +16,34 @@ class NewListForm(FlaskForm):
         "Doeltaal", validators=[DataRequired(), Length(min=1, max=50)]
     )
     submit = SubmitField("Lijst Aanmaken")
+
+    def __init__(self, languages=None, categories=None, *args, **kwargs):
+        super(NewListForm, self).__init__(*args, **kwargs)
+        if languages:
+            self.language_id.choices = [(lang.id, lang.name) for lang in languages]
+        else:
+            self.language_id.choices = []
+        if categories:
+            self.category_id.choices = [(0, "Geen categorie")] + [
+                (cat.id, cat.name) for cat in categories
+            ]
+        else:
+            self.category_id.choices = [(0, "Geen categorie")]
+
+
+class LanguageFilterForm(FlaskForm):
+    """Form voor het filteren van lijsten op taal"""
+
+    language_id = SelectField("Filter op taal", coerce=int)
+
+    def __init__(self, languages=None, *args, **kwargs):
+        super(LanguageFilterForm, self).__init__(*args, **kwargs)
+        if languages:
+            self.language_id.choices = [(0, "Alle talen")] + [
+                (lang.id, lang.name) for lang in languages
+            ]
+        else:
+            self.language_id.choices = [(0, "Alle talen")]
 
 
 class AddEntryForm(FlaskForm):
@@ -115,9 +145,14 @@ class AIGenerateForm(FlaskForm):
     )
     count = SelectField(
         "Aantal items",
-        choices=[("5", "5"), ("10", "10"), ("15", "15"), ("20", "20")],
+        choices=[
+            ("", "Automatisch"),
+            ("5", "5"),
+            ("10", "10"),
+            ("15", "15"),
+            ("20", "20"),
+        ],
         default="10",
-        validators=[DataRequired()],
     )
     submit = SubmitField("Genereer Lijst")
 

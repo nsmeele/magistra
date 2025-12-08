@@ -3,6 +3,35 @@ from datetime import datetime
 from app import db
 
 
+class Language(db.Model):
+    """Vaste talenlijst voor filtering"""
+
+    __tablename__ = "languages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+    code = db.Column(db.String(10), nullable=False, unique=True)
+
+    lists = db.relationship("List", backref="language", lazy=True)
+
+    def __repr__(self):
+        return f"<Language {self.name}>"
+
+
+class Category(db.Model):
+    """Categorieën voor lijsten"""
+
+    __tablename__ = "categories"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+
+    lists = db.relationship("List", backref="category", lazy=True)
+
+    def __repr__(self):
+        return f"<Category {self.name}>"
+
+
 class List(db.Model):
     __tablename__ = "lists"
 
@@ -10,6 +39,8 @@ class List(db.Model):
     name = db.Column(db.String(100), nullable=False)
     source_language = db.Column(db.String(50), nullable=False)
     target_language = db.Column(db.String(50), nullable=False)
+    language_id = db.Column(db.Integer, db.ForeignKey("languages.id"), nullable=True)
+    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     entries = db.relationship(

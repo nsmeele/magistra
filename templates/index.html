@@ -5,12 +5,33 @@
 {% block content %}
 <div class="page-header">
     <h2>Mijn Woordenlijsten</h2>
-    {% if lists|length > 1 %}
-        <a href="{{ url_for('main.mixed_quiz') }}" class="btn btn-primary">
-            <i class="fas fa-random"></i> Gemengde Quiz
-        </a>
-    {% endif %}
+    <div class="header-actions">
+        {% if lists|length > 1 %}
+            <a href="{{ url_for('main.mixed_quiz') }}" class="btn btn-primary">
+                <i class="fas fa-random"></i> Gemengde Quiz
+            </a>
+        {% endif %}
+    </div>
 </div>
+
+{% if languages %}
+<div class="filter-section">
+    <form method="get" action="{{ url_for('main.index') }}" class="filter-form">
+        <label for="language_id">Filter op taal:</label>
+        <select name="language_id" id="language_id" onchange="this.form.submit()">
+            <option value="0">Alle talen</option>
+            {% for lang in languages %}
+                <option value="{{ lang.id }}" {% if selected_language and selected_language.id == lang.id %}selected{% endif %}>{{ lang.name }}</option>
+            {% endfor %}
+        </select>
+        {% if selected_language %}
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-times"></i> Filter wissen
+            </a>
+        {% endif %}
+    </form>
+</div>
+{% endif %}
 
 {% if lists %}
     <div class="lists-grid">
@@ -29,6 +50,10 @@
         {% endfor %}
     </div>
 {% else %}
-    <p class="empty-state">Je hebt nog geen woordenlijsten. <a href="{{ url_for('main.new_list') }}">Maak je eerste lijst aan!</a></p>
+    {% if selected_language %}
+        <p class="empty-state">Geen lijsten gevonden voor {{ selected_language.name }}. <a href="{{ url_for('main.index') }}">Bekijk alle lijsten</a> of <a href="{{ url_for('main.new_list') }}">maak een nieuwe lijst aan</a>.</p>
+    {% else %}
+        <p class="empty-state">Je hebt nog geen woordenlijsten. <a href="{{ url_for('main.new_list') }}">Maak je eerste lijst aan!</a></p>
+    {% endif %}
 {% endif %}
 {% endblock %}

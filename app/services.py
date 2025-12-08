@@ -5,8 +5,57 @@ from typing import List as ListType
 from typing import Optional, Tuple
 
 from app import db
-from app.models import Entry, List, QuizAnswer, QuizSession, QuizSessionList
-from app.repositories import EntryRepository, ListRepository
+from app.models import (
+    Category,
+    Entry,
+    Language,
+    List,
+    QuizAnswer,
+    QuizSession,
+    QuizSessionList,
+)
+from app.repositories import (
+    CategoryRepository,
+    EntryRepository,
+    LanguageRepository,
+    ListRepository,
+)
+
+
+class LanguageService:
+    """Service for language operations"""
+
+    def __init__(self):
+        self.language_repo = LanguageRepository()
+
+    def get_all_languages(self) -> ListType[Language]:
+        """Get all languages"""
+        return self.language_repo.get_all_ordered()
+
+    def get_language_by_id(self, language_id: int) -> Optional[Language]:
+        """Get a specific language"""
+        return self.language_repo.get_by_id(language_id)
+
+
+class CategoryService:
+    """Service for category operations"""
+
+    def __init__(self):
+        self.category_repo = CategoryRepository()
+
+    def get_all_categories(self) -> ListType[Category]:
+        """Get all categories"""
+        return self.category_repo.get_all_ordered()
+
+    def get_category_by_id(self, category_id: int) -> Optional[Category]:
+        """Get a specific category"""
+        return self.category_repo.get_by_id(category_id)
+
+    def create_category(self, name: str) -> Category:
+        """Create a new category"""
+        if not name:
+            raise ValueError("Category name is required")
+        return self.category_repo.create(name=name)
 
 
 class ListService:
@@ -16,9 +65,18 @@ class ListService:
         self.list_repo = ListRepository()
         self.entry_repo = EntryRepository()
 
-    def get_all_lists(self) -> ListType[List]:
-        """Get all lists ordered by creation date"""
-        return self.list_repo.get_all_ordered()
+    def get_all_lists(
+        self,
+        language_id: Optional[int] = None,
+        language_name: Optional[str] = None,
+        category_id: Optional[int] = None,
+    ) -> ListType[List]:
+        """Get all lists ordered by creation date, optionally filtered"""
+        return self.list_repo.get_all_ordered(
+            language_id=language_id,
+            language_name=language_name,
+            category_id=category_id,
+        )
 
     def get_list_by_id(self, list_id: int) -> Optional[List]:
         """Get a specific list"""
@@ -29,12 +87,19 @@ class ListService:
         return self.entry_repo.get_by_id(entry_id)
 
     def create_list(
-        self, name: str, source_language: str, target_language: str
+        self,
+        name: str,
+        source_language: str,
+        target_language: str,
+        language_id: Optional[int] = None,
+        category_id: Optional[int] = None,
     ) -> List:
         """Create a new list"""
         if not all([name, source_language, target_language]):
             raise ValueError("All fields are required")
-        return self.list_repo.create_list(name, source_language, target_language)
+        return self.list_repo.create_list(
+            name, source_language, target_language, language_id, category_id
+        )
 
     def delete_list(self, list_id: int) -> None:
         """Delete a list"""

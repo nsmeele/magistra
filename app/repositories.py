@@ -2,7 +2,7 @@ from typing import List as ListType
 from typing import Optional
 
 from app import db
-from app.models import Entry, List
+from app.models import Category, Entry, Language, List
 
 
 class BaseRepository:
@@ -39,26 +39,79 @@ class BaseRepository:
         db.session.commit()
 
 
+class LanguageRepository(BaseRepository):
+    """Repository for Language operations"""
+
+    def __init__(self):
+        super().__init__(Language)
+
+    def get_all_ordered(self) -> ListType[Language]:
+        """Get all languages ordered by name"""
+        return self.model.query.order_by(self.model.name).all()
+
+    def get_by_code(self, code: str) -> Optional[Language]:
+        """Get a language by its code"""
+        return self.model.query.filter_by(code=code).first()
+
+
+class CategoryRepository(BaseRepository):
+    """Repository for Category operations"""
+
+    def __init__(self):
+        super().__init__(Category)
+
+    def get_all_ordered(self) -> ListType[Category]:
+        """Get all categories ordered by name"""
+        return self.model.query.order_by(self.model.name).all()
+
+
 class ListRepository(BaseRepository):
     """Repository for List operations"""
 
     def __init__(self):
         super().__init__(List)
 
-    def get_all_ordered(self) -> ListType["List"]:
-        """Get all lists ordered by creation date (newest first)"""
-        return self.model.query.order_by(self.model.created_at.desc()).all()
+    def get_all_ordered(
+        self,
+        language_id: Optional[int] = None,
+        language_name: Optional[str] = None,
+        category_id: Optional[int] = None,
+    ) -> ListType["List"]:
+        """Get all lists ordered by creation date (newest first), optionally filtered"""
+        query = self.model.query
+        if language_id:
+            query = query.filter_by(language_id=language_id)
+        if language_name:
+            # Filter op lijsten waar de taal voorkomt in source OF target
+            query = query.filter(
+                db.or_(
+                    self.model.source_language.ilike(language_name),
+                    self.model.target_language.ilike(language_name),
+                )
+            )
+        if category_id:
+            query = query.filter_by(category_id=category_id)
+        return query.order_by(self.model.created_at.desc()).all()
 
     def get_with_entries(self, list_id: int) -> Optional["List"]:
         """Get a list with all its entries loaded"""
         return self.model.query.filter_by(id=list_id).first()
 
     def create_list(
-        self, name: str, source_language: str, target_language: str
+        self,
+        name: str,
+        source_language: str,
+        target_language: str,
+        language_id: Optional[int] = None,
+        category_id: Optional[int] = None,
     ) -> "List":
         """Create a new list"""
         return self.create(
-            name=name, source_language=source_language, target_language=target_language
+            name=name,
+            source_language=source_language,
+            target_language=target_language,
+            language_id=language_id,
+            category_id=category_id,
         )
 
 
