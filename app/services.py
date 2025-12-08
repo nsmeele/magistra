@@ -128,6 +128,7 @@ class QuizService:
             "quiz_list_id": list_id,
             "quiz_index": 0,
             "quiz_score": 0,
+            "quiz_total": len(quiz_questions),
         }
 
     def initialize_mixed_quiz(
@@ -202,6 +203,7 @@ class QuizService:
             "quiz_target_language": target_lang,
             "quiz_index": 0,
             "quiz_score": 0,
+            "quiz_total": len(quiz_questions),
         }
 
     def get_current_question(
@@ -297,9 +299,11 @@ class QuizService:
 
     def get_quiz_results(self, quiz_data: Dict) -> Dict:
         """Get the final quiz results"""
+        # Use quiz_total if available (original question count), otherwise fall back to questions length
+        total = quiz_data.get("quiz_total", len(quiz_data.get("quiz_questions", [])))
         return {
             "score": quiz_data.get("quiz_score", 0),
-            "total": len(quiz_data.get("quiz_questions", [])),
+            "total": total,
         }
 
     def create_or_update_session(
@@ -330,13 +334,15 @@ class QuizService:
                 return session
 
         # Create new session
+        # Use quiz_total if available (original question count), otherwise fall back to questions length
+        total = quiz_data.get("quiz_total", len(quiz_data.get("quiz_questions", [])))
         session = QuizSession(
             quiz_type=quiz_type,
             direction=direction,
-            total_questions=len(quiz_data.get("quiz_questions", [])),
+            total_questions=total,
             correct_answers=quiz_data.get("quiz_score", 0),
             current_index=quiz_data.get("quiz_index", 0),
-            status='in_progress',
+            status="in_progress",
             quiz_data=quiz_data,
         )
         db.session.add(session)
@@ -356,9 +362,7 @@ class QuizService:
         db.session.commit()
         return session
 
-    def save_quiz_answer(
-        self, session_id: int, answer_data: Dict
-    ) -> QuizAnswer:
+    def save_quiz_answer(self, session_id: int, answer_data: Dict) -> QuizAnswer:
         """
         Save a single quiz answer to an existing session
 
@@ -381,9 +385,7 @@ class QuizService:
         db.session.commit()
         return answer
 
-    def complete_quiz_session(
-        self, session_id: int, final_score: int
-    ) -> QuizSession:
+    def complete_quiz_session(self, session_id: int, final_score: int) -> QuizSession:
         """
         Mark a quiz session as completed
 
@@ -396,7 +398,7 @@ class QuizService:
         """
         session = QuizSession.query.get(session_id)
         if session:
-            session.status = 'completed'
+            session.status = "completed"
             session.completed_at = datetime.utcnow()
             session.correct_answers = final_score
 
@@ -428,18 +430,22 @@ class QuizService:
         # Get direction from quiz_data
         direction = quiz_data.get("direction", "random")
         if direction == "random":
-            directions = set(q.get("direction") for q in quiz_data.get("quiz_questions", []))
+            directions = set(
+                q.get("direction") for q in quiz_data.get("quiz_questions", [])
+            )
             if len(directions) == 1:
                 direction = directions.pop()
 
         # Create quiz session as completed
+        # Use quiz_total if available (original question count), otherwise fall back to questions length
+        total = quiz_data.get("quiz_total", len(quiz_data.get("quiz_questions", [])))
         session = QuizSession(
             quiz_type=quiz_type,
             direction=direction,
-            total_questions=len(quiz_data.get("quiz_questions", [])),
+            total_questions=total,
             correct_answers=quiz_data.get("quiz_score", 0),
-            current_index=len(quiz_data.get("quiz_questions", [])),
-            status='completed',
+            current_index=total,
+            status="completed",
             started_at=datetime.utcnow(),
             completed_at=datetime.utcnow(),
             quiz_data=quiz_data,
@@ -474,14 +480,14 @@ class QuizService:
         return session
 
     def get_quiz_history(
-        self, limit: Optional[int] = None, status: Optional[str] = 'completed'
+        self, limit: Optional[int] = None, status: Optional[str] = "completed"
     ) -> ListType[QuizSession]:
         """Get quiz history ordered by completion date (newest first)"""
         query = QuizSession.query
         if status:
             query = query.filter_by(status=status)
 
-        if status == 'completed':
+        if status == "completed":
             query = query.order_by(QuizSession.completed_at.desc())
         else:
             query = query.order_by(QuizSession.started_at.desc())
@@ -492,9 +498,11 @@ class QuizService:
 
     def get_incomplete_sessions(self) -> ListType[QuizSession]:
         """Get all incomplete quiz sessions"""
-        return QuizSession.query.filter_by(status='in_progress').order_by(
-            QuizSession.started_at.desc()
-        ).all()
+        return (
+            QuizSession.query.filter_by(status="in_progress")
+            .order_by(QuizSession.started_at.desc())
+            .all()
+        )
 
     def get_quiz_session_detail(self, session_id: int) -> Optional[QuizSession]:
         """Get detailed quiz session with all answers"""
@@ -529,9 +537,7 @@ class QuizService:
         entries = query.all()
 
         # Sort in Python since we need the property
-        entries_with_rate = [
-            (entry, entry.success_rate or 0) for entry in entries
-        ]
+        entries_with_rate = [(entry, entry.success_rate or 0) for entry in entries]
         entries_with_rate.sort(key=lambda x: x[1])
 
         return [entry for entry, _ in entries_with_rate[:limit]]

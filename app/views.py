@@ -380,7 +380,7 @@ class QuizAnswerView(MethodView):
                     "user_answer": user_answer,
                     "correct_answer": correct_answer,
                     "is_correct": is_correct,
-                    "direction": direction
+                    "direction": direction,
                 }
 
                 # Save answer to database if we have a session ID
@@ -403,7 +403,9 @@ class QuizAnswerView(MethodView):
                 # Update quiz session progress
                 if quiz_session_id:
                     try:
-                        self.quiz_service.create_or_update_session(dict(session), quiz_session_id)
+                        self.quiz_service.create_or_update_session(
+                            dict(session), quiz_session_id
+                        )
                     except Exception as e:
                         print(f"Error updating session: {e}")
 
@@ -601,7 +603,7 @@ class MixedQuizAnswerView(MethodView):
                     "user_answer": user_answer,
                     "correct_answer": correct_answer,
                     "is_correct": is_correct,
-                    "direction": direction
+                    "direction": direction,
                 }
 
                 # Save answer to database if we have a session ID
@@ -624,7 +626,9 @@ class MixedQuizAnswerView(MethodView):
                 # Update quiz session progress
                 if quiz_session_id:
                     try:
-                        self.quiz_service.create_or_update_session(dict(session), quiz_session_id)
+                        self.quiz_service.create_or_update_session(
+                            dict(session), quiz_session_id
+                        )
                     except Exception as e:
                         print(f"Error updating session: {e}")
 
@@ -647,7 +651,7 @@ class QuizHistoryView(MethodView):
         return render_template(
             "quiz_history.html",
             sessions=sessions,
-            incomplete_sessions=incomplete_sessions
+            incomplete_sessions=incomplete_sessions,
         )
 
 
@@ -681,7 +685,7 @@ class ResumeQuizView(MethodView):
             flash("Quiz sessie niet gevonden", "error")
             return redirect(url_for("main.quiz_history"))
 
-        if quiz_session.status != 'in_progress':
+        if quiz_session.status != "in_progress":
             flash("Deze quiz is al voltooid", "info")
             return redirect(url_for("main.quiz_history_detail", session_id=session_id))
 
@@ -754,13 +758,18 @@ class SmartPracticeView(MethodView):
         quiz_questions = []
         for entry in difficult_entries:
             if direction == "random":
-                entry_direction = "forward" if entry.success_rate and entry.success_rate < 50 else "reverse"
+                entry_direction = (
+                    "forward"
+                    if entry.success_rate and entry.success_rate < 50
+                    else "reverse"
+                )
             else:
                 entry_direction = direction
             quiz_questions.append({"entry_id": entry.id, "direction": entry_direction})
 
         # Shuffle for variety
         import random
+
         random.shuffle(quiz_questions)
 
         # Store in session
@@ -768,6 +777,7 @@ class SmartPracticeView(MethodView):
             "quiz_questions": quiz_questions,
             "quiz_index": 0,
             "quiz_score": 0,
+            "quiz_total": len(quiz_questions),
             "quiz_answers": [],
             "direction": direction,
         }
