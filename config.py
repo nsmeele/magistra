@@ -14,3 +14,8 @@ class Config:
         os.environ.get("DATABASE_URL") or "postgresql://localhost/magistra"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # AI Provider Configuration
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+    ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+    OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")

@@ -1,8 +1,17 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask.views import MethodView
 
-from app.forms import (AddEntryForm, DeleteForm, EditEntryForm, NewListForm,
-                       QuizAnswerForm, QuizDirectionForm)
+from app.ai_service import AIService
+from app.forms import (
+    AddEntryForm,
+    AIGenerateForm,
+    DeleteForm,
+    EditEntryForm,
+    NewListForm,
+    QuizAnswerForm,
+    QuizDirectionForm,
+    SaveGeneratedListForm,
+)
 from app.services import ListService, QuizService
 
 
@@ -797,3 +806,139 @@ class SmartPracticeView(MethodView):
             session.update(quiz_data)
             flash("Smart practice quiz gestart!", "success")
             return redirect(url_for("main.mixed_quiz_question"))
+
+
+class AIGenerateView(MethodView):
+    """View for AI-powered list generation"""
+
+    def __init__(self):
+        self.ai_service = AIService()
+        self.list_service = ListService()
+
+    def get(self):
+        """Display the AI generation form"""
+        providers = self.ai_service.get_available_providers()
+        available_providers = [p for p in providers if p["available"]]
+
+        if not available_providers:
+            flash(
+                "Geen AI providers beschikbaar. Configureer een API key of start Ollama.",
+                "error",
+            )
+            return render_template(
+                "ai_generate.html", form=None, providers=providers, generated_items=None
+            )
+
+        form = AIGenerateForm(providers=providers)
+        return render_template(
+            "ai_generate.html", form=form, providers=providers, generated_items=None
+        )
+
+    def post(self):
+        """Handle AI generation request"""
+        providers = self.ai_service.get_available_providers()
+        form = AIGenerateForm(providers=providers)
+
+        if form.validate_on_submit():
+            try:
+                items = self.ai_service.generate_list(
+                    provider_key=form.provider.data,
+                    topic=form.topic.data,
+                    source_language=form.source_language.data,
+                    target_language=form.target_language.data,
+                    entry_type=form.entry_type.data,
+                    count=int(form.count.data),
+                )
+
+                # Store generated items in session for saving
+                session["ai_generated_items"] = items
+                session["ai_generated_meta"] = {
+                    "topic": form.topic.data,
+                    "source_language": form.source_language.data,
+                    "target_language": form.target_language.data,
+                    "entry_type": form.entry_type.data,
+                }
+
+                save_form = SaveGeneratedListForm()
+                save_form.list_name.data = form.topic.data
+
+                flash(f"{len(items)} items gegenereerd!", "success")
+                return render_template(
+                    "ai_generate.html",
+                    form=form,
+                    providers=providers,
+                    generated_items=items,
+                    save_form=save_form,
+                    meta=session["ai_generated_meta"],
+                )
+
+            except Exception as e:
+                flash(f"Fout bij genereren: {str(e)}", "error")
+
+        return render_template(
+            "ai_generate.html", form=form, providers=providers, generated_items=None
+        )
+
+
+class AISaveListView(MethodView):
+    """View for saving AI-generated list"""
+
+    def __init__(self):
+        self.list_service = ListService()
+
+    def post(self):
+        """Save the generated items as a new list"""
+        form = SaveGeneratedListForm()
+
+        if not form.validate_on_submit():
+            flash("Ongeldige invoer", "error")
+            return redirect(url_for("main.ai_generate"))
+
+        items = session.get("ai_generated_items")
+        meta = session.get("ai_generated_meta")
+
+        if not items or not meta:
+            flash("Geen gegenereerde items om op te slaan", "error")
+            return redirect(url_for("main.ai_generate"))
+
+        # Get selected items from form
+        selected_indices = request.form.getlist("selected_items")
+        if selected_indices:
+            # Filter to only selected items
+            selected_indices = [int(i) for i in selected_indices]
+            items = [items[i] for i in selected_indices if i < len(items)]
+
+        if not items:
+            flash("Selecteer minimaal 1 item om op te slaan", "error")
+            return redirect(url_for("main.ai_generate"))
+
+        try:
+            # Create the list
+            word_list = self.list_service.create_list(
+                form.list_name.data,
+                meta["source_language"],
+                meta["target_language"],
+            )
+
+            # Add all items
+            for item in items:
+                self.list_service.add_entry_to_list(
+                    word_list.id,
+                    item["source"],
+                    item["target"],
+                    meta["entry_type"],
+                )
+
+            # Clear session
+            session.pop("ai_generated_items", None)
+            session.pop("ai_generated_meta", None)
+
+            flash(
+                f"Lijst '{form.list_name.data}' aangemaakt met {len(items)} items!",
+                "success",
+            )
+            return redirect(url_for("main.list_detail", list_id=word_list.id))
+
+        except Exception as e:
+            flash(f"Fout bij opslaan: {str(e)}", "error")
+            return redirect(url_for("main.ai_generate"))

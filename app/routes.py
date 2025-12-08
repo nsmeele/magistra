@@ -1,12 +1,28 @@
 from flask import Blueprint
 
-from app.views import (AddEntryView, DeleteEntryView, DeleteListView,
-                       EditEntryView, EditListView, IndexView, ListDetailView,
-                       MixedQuizAnswerView, MixedQuizQuestionView,
-                       MixedQuizStartView, MixedQuizView, NewListView,
-                       QuizAnswerView, QuizHistoryDetailView, QuizHistoryView,
-                       QuizStartView, QuizView, ResumeQuizView,
-                       SmartPracticeView)
+from app.views import (
+    AddEntryView,
+    AIGenerateView,
+    AISaveListView,
+    DeleteEntryView,
+    DeleteListView,
+    EditEntryView,
+    EditListView,
+    IndexView,
+    ListDetailView,
+    MixedQuizAnswerView,
+    MixedQuizQuestionView,
+    MixedQuizStartView,
+    MixedQuizView,
+    NewListView,
+    QuizAnswerView,
+    QuizHistoryDetailView,
+    QuizHistoryView,
+    QuizStartView,
+    QuizView,
+    ResumeQuizView,
+    SmartPracticeView,
+)
 
 # Create Blueprint
 bp = Blueprint("main", __name__)
@@ -82,4 +98,16 @@ bp.add_url_rule(
     "/list/<int:list_id>/practice",
     view_func=SmartPracticeView.as_view("smart_practice_list"),
     methods=["GET", "POST"],
+)
+
+# AI generation routes
+bp.add_url_rule(
+    "/ai/generate",
+    view_func=AIGenerateView.as_view("ai_generate"),
+    methods=["GET", "POST"],
+)
+bp.add_url_rule(
+    "/ai/save",
+    view_func=AISaveListView.as_view("ai_save_list"),
+    methods=["POST"],
 )

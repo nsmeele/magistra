@@ -100,7 +100,9 @@ class QuizSession(db.Model):
             "correct_answers": self.correct_answers,
             "score_percentage": self.score_percentage,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": (
+                self.completed_at.isoformat() if self.completed_at else None
+            ),
         }
 
 

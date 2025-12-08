@@ -87,3 +87,55 @@ class QuizDirectionForm(FlaskForm):
                 ("forward", "Brontaal → Doeltaal"),
                 ("reverse", "Doeltaal → Brontaal"),
             ]
+
+
+class AIGenerateForm(FlaskForm):
+    """Form voor het genereren van een lijst met AI"""
+
+    provider = SelectField(
+        "AI Provider",
+        validators=[DataRequired()],
+    )
+    topic = StringField(
+        "Onderwerp",
+        validators=[DataRequired(), Length(min=1, max=200)],
+    )
+    entry_type = SelectField(
+        "Type",
+        choices=[("word", "Woorden"), ("sentence", "Zinnen")],
+        validators=[DataRequired()],
+    )
+    source_language = StringField(
+        "Brontaal",
+        validators=[DataRequired(), Length(min=1, max=50)],
+    )
+    target_language = StringField(
+        "Doeltaal",
+        validators=[DataRequired(), Length(min=1, max=50)],
+    )
+    count = SelectField(
+        "Aantal items",
+        choices=[("5", "5"), ("10", "10"), ("15", "15"), ("20", "20")],
+        default="10",
+        validators=[DataRequired()],
+    )
+    submit = SubmitField("Genereer Lijst")
+
+    def __init__(self, providers=None, *args, **kwargs):
+        super(AIGenerateForm, self).__init__(*args, **kwargs)
+        if providers:
+            self.provider.choices = [
+                (p["key"], p["name"]) for p in providers if p["available"]
+            ]
+        else:
+            self.provider.choices = []
+
+
+class SaveGeneratedListForm(FlaskForm):
+    """Form voor het opslaan van een gegenereerde lijst"""
+
+    list_name = StringField(
+        "Lijstnaam",
+        validators=[DataRequired(), Length(min=1, max=100)],
+    )
+    submit = SubmitField("Opslaan als Nieuwe Lijst")

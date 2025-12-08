@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}AI Lijst Generator - Magistra{% endblock %}
+
+{% block content %}
+<h2><i class="fa-solid fa-wand-magic-sparkles"></i> AI Lijst Generator</h2>
+
+<div class="grid gap-8 md:grid-cols-2">
+    <!-- Left column: Form -->
+    <div>
+        <div class="card">
+            <h3 class="mb-4">Genereer een lijst</h3>
+
+            {% if not form %}
+                <div class="alert alert-error">
+                    <p><strong>Geen AI providers beschikbaar</strong></p>
+                    <p class="mt-2">Configureer een van de volgende opties:</p>
+                    <ul class="mt-2 ml-4 list-disc">
+                        <li>Voeg <code>OPENAI_API_KEY</code> toe aan je .env bestand</li>
+                        <li>Voeg <code>ANTHROPIC_API_KEY</code> toe aan je .env bestand</li>
+                        <li>Start Ollama lokaal (<code>ollama serve</code>)</li>
+                    </ul>
+                </div>
+
+                <h4 class="mt-6 mb-2">Provider status:</h4>
+                <ul class="space-y-2">
+                    {% for provider in providers %}
+                    <li class="flex items-center gap-2">
+                        {% if provider.available %}
+                            <i class="fa-solid fa-circle-check text-green-500"></i>
+                        {% else %}
+                            <i class="fa-solid fa-circle-xmark text-red-500"></i>
+                        {% endif %}
+                        {{ provider.name }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <form method="POST" class="form">
+                    {{ form.hidden_tag() }}
+
+                    <div class="form-group">
+                        {{ form.provider.label }}
+                        {{ form.provider(class="form-control") }}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.topic.label }}
+                        {{ form.topic(class="form-control", placeholder="bijv. Werkwoorden koken, Dieren in het bos, Transportmiddelen") }}
+                        {% if form.topic.errors %}
+                            <span class="error">{{ form.topic.errors[0] }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.entry_type.label }}
+                        {{ form.entry_type(class="form-control") }}
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            {{ form.source_language.label(text="Van (taal):") }}
+                            {{ form.source_language(class="form-control", placeholder="bijv. Nederlands") }}
+                            {% if form.source_language.errors %}
+                                <span class="error">{{ form.source_language.errors[0] }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.target_language.label(text="Naar (taal):") }}
+                            {{ form.target_language(class="form-control", placeholder="bijv. Engels") }}
+                            {% if form.target_language.errors %}
+                                <span class="error">{{ form.target_language.errors[0] }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.count.label }}
+                        {{ form.count(class="form-control") }}
+                    </div>
+
+                    <div class="form-actions">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Annuleren</a>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right column: Results -->
+    <div>
+        {% if generated_items %}
+        <div class="card">
+            <h3 class="mb-4">Gegenereerde items</h3>
+
+            <form method="POST" action="{{ url_for('main.ai_save_list') }}">
+                {{ save_form.hidden_tag() }}
+
+                <div class="form-group">
+                    {{ save_form.list_name.label }}
+                    {{ save_form.list_name(class="form-control") }}
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 mb-2">
+                        {{ meta.source_language }} → {{ meta.target_language }} |
+                        {% if meta.entry_type == 'word' %}Woorden{% else %}Zinnen{% endif %}
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="flex items-center gap-2 cursor-pointer mb-2">
+                        <input type="checkbox" id="select-all" checked class="form-checkbox">
+                        <span class="text-sm font-medium">Alles selecteren</span>
+                    </label>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="table w-full">
+                        <thead>
+                            <tr>
+                                <th class="w-10"></th>
+                                <th>{{ meta.source_language }}</th>
+                                <th>{{ meta.target_language }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in generated_items %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox"
+                                           name="selected_items"
+                                           value="{{ loop.index0 }}"
+                                           checked
+                                           class="item-checkbox form-checkbox">
+                                </td>
+                                <td>{{ item.source }}</td>
+                                <td>{{ item.target }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="form-actions mt-4">
+                    {{ save_form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="card bg-gray-50">
+            <div class="text-center text-gray-500 py-8">
+                <i class="fa-solid fa-lightbulb text-4xl mb-4"></i>
+                <p class="font-medium">Tips voor goede resultaten:</p>
+                <ul class="mt-4 text-sm text-left max-w-md mx-auto space-y-2">
+                    <li><i class="fa-solid fa-check text-green-500 mr-2"></i>Wees specifiek: "Werkwoorden voor koken" werkt beter dan "koken"</li>
+                    <li><i class="fa-solid fa-check text-green-500 mr-2"></i>Geef context: "Dieren in het bos" i.p.v. alleen "dieren"</li>
+                    <li><i class="fa-solid fa-check text-green-500 mr-2"></i>Gebruik bekende talen: Nederlands, Engels, Frans, Duits, Spaans</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if generated_items %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    });
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+            selectAll.checked = Array.from(checkboxes).every(c => c.checked);
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}
