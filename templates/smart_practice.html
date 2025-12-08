@@ -10,9 +10,9 @@
     </a>
 </div>
 
-<div class="practice-intro">
-    <p>
-        <i class="fas fa-brain"></i>
+<div class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-8 rounded-lg mb-8">
+    <p class="m-0 text-lg leading-relaxed">
+        <i class="fas fa-brain text-xl mr-2"></i>
         {% if word_list %}
             Hieronder staan de <strong>{{ entries|length }} moeilijkste woorden</strong> uit "<strong>{{ word_list.name }}</strong>".
         {% else %}
@@ -22,53 +22,53 @@
     </p>
 </div>
 
-<div class="difficult-words">
-    <h3>Woorden om te oefenen</h3>
-    <div class="words-grid">
+<div>
+    <h3 class="mb-6">Woorden om te oefenen</h3>
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 mb-8">
         {% for entry in entries %}
-            <div class="word-card difficulty-{{ (entry.success_rate // 20)|int if entry.success_rate else 0 }}">
-                <div class="word-header">
-                    <div class="word-pair">
-                        <span class="source">{{ entry.source_word }}</span>
-                        <i class="fas fa-exchange-alt"></i>
-                        <span class="target">{{ entry.target_word }}</span>
+            <div class="bg-white p-5 rounded-lg border-l-4 transition-transform hover:-translate-y-0.5 hover:shadow-lg {% if entry.success_rate is none or entry.success_rate < 20 %}border-l-red-500{% elif entry.success_rate < 40 %}border-l-red-500{% elif entry.success_rate < 60 %}border-l-orange-500{% elif entry.success_rate < 80 %}border-l-yellow-500{% else %}border-l-green-500{% endif %}">
+                <div class="mb-4">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="text-lg font-semibold">{{ entry.source_word }}</span>
+                        <i class="fas fa-exchange-alt text-gray-500 text-sm"></i>
+                        <span class="text-lg font-semibold">{{ entry.target_word }}</span>
                     </div>
                     {% if entry.success_rate is not none %}
-                        <div class="success-rate">
-                            <span class="rate-value">{{ entry.success_rate }}%</span>
-                            <div class="rate-bar">
-                                <div class="rate-fill" style="width: {{ entry.success_rate }}%"></div>
+                        <div class="mt-2">
+                            <span class="inline-block text-sm font-semibold mb-1">{{ entry.success_rate }}%</span>
+                            <div class="h-1.5 bg-gray-200 rounded-sm overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-red-500 via-orange-500 to-green-500 transition-[width] duration-300" style="width: {{ entry.success_rate }}%"></div>
                             </div>
                         </div>
                     {% endif %}
                 </div>
-                <div class="word-meta">
-                    <span class="attempts">{{ entry.total_attempts }} pogingen</span>
-                    <span class="list-name">{{ entry.list.name }}</span>
+                <div class="flex justify-between pt-3 border-t border-gray-200 text-sm text-gray-500">
+                    <span>{{ entry.total_attempts }} pogingen</span>
+                    <span>{{ entry.list.name }}</span>
                 </div>
             </div>
         {% endfor %}
     </div>
 </div>
 
-<div class="practice-start">
+<div class="bg-white p-8 rounded-lg text-center">
     <form method="POST">
-        <div class="form-group">
-            <label for="direction">Kies richting:</label>
-            <select name="direction" id="direction" class="form-control">
-                <option value="random">🎲 Willekeurig (beide richtingen)</option>
+        <div class="max-w-[400px] mx-auto mb-6">
+            <label for="direction" class="block mb-2 font-medium text-gray-800">Kies richting:</label>
+            <select name="direction" id="direction" class="w-full px-3 py-3 border border-gray-300 rounded text-base bg-white focus:outline-none focus:border-blue-500 cursor-pointer">
+                <option value="random">Willekeurig (beide richtingen)</option>
                 <option value="forward">
                     {% if word_list %}
-                        ➡️ {{ word_list.source_language }} → {{ word_list.target_language }}
+                        {{ word_list.source_language }} -> {{ word_list.target_language }}
                     {% else %}
-                        ➡️ Bron → Doel
+                        Bron -> Doel
                     {% endif %}
                 </option>
                 <option value="reverse">
                     {% if word_list %}
-                        ⬅️ {{ word_list.target_language }} → {{ word_list.source_language }}
+                        {{ word_list.target_language }} -> {{ word_list.source_language }}
                     {% else %}
-                        ⬅️ Doel → Bron
+                        Doel -> Bron
                     {% endif %}
                 </option>
             </select>
@@ -78,139 +78,4 @@
         </button>
     </form>
 </div>
-
-<style>
-.practice-intro {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 2rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-}
-
-.practice-intro p {
-    margin: 0;
-    font-size: 1.1rem;
-    line-height: 1.6;
-}
-
-.practice-intro i {
-    font-size: 1.3rem;
-    margin-right: 0.5rem;
-}
-
-.difficult-words h3 {
-    margin-bottom: 1.5rem;
-}
-
-.words-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.word-card {
-    background: var(--card-background);
-    padding: 1.25rem;
-    border-radius: 8px;
-    border-left: 4px solid var(--border-color);
-    transition: transform 0.2s;
-}
-
-.word-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.word-card.difficulty-0,
-.word-card.difficulty-1 {
-    border-left-color: #F44336;
-}
-
-.word-card.difficulty-2 {
-    border-left-color: #FF9800;
-}
-
-.word-card.difficulty-3 {
-    border-left-color: #FFC107;
-}
-
-.word-card.difficulty-4,
-.word-card.difficulty-5 {
-    border-left-color: #4CAF50;
-}
-
-.word-header {
-    margin-bottom: 1rem;
-}
-
-.word-pair {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-}
-
-.word-pair .source,
-.word-pair .target {
-    font-size: 1.15rem;
-    font-weight: 600;
-}
-
-.word-pair i {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-.success-rate {
-    margin-top: 0.5rem;
-}
-
-.rate-value {
-    display: inline-block;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.rate-bar {
-    height: 6px;
-    background: var(--border-color);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.rate-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #F44336 0%, #FF9800 50%, #4CAF50 100%);
-    transition: width 0.3s;
-}
-
-.word-meta {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border-color);
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.practice-start {
-    background: var(--card-background);
-    padding: 2rem;
-    border-radius: 8px;
-    text-align: center;
-}
-
-.practice-start .form-group {
-    max-width: 400px;
-    margin: 0 auto 1.5rem;
-}
-
-.btn-large {
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
-}
-</style>
 {% endblock %}

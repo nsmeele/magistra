@@ -11,31 +11,33 @@
 </head>
 <body>
     <nav>
-        <div class="container">
+        <div class="container mx-auto flex justify-between align-center">
             <div class="nav-left">
                 <a class="font-bold" href="{{ url_for('main.index') }}">MAGISTRA</a>
-                <a href="{{ url_for('main.quiz_history') }}" class="nav-link"><i class="fas fa-history"></i> Geschiedenis</a>
-                <a href="{{ url_for('main.smart_practice') }}" class="nav-link"><i class="fas fa-brain"></i> Smart Practice</a>
+                <a href="{{ url_for('main.quiz_history') }}" class="nav-link"><i class="fa-solid fa-fw fa-history"></i> Geschiedenis</a>
+                <a href="{{ url_for('main.smart_practice') }}" class="nav-link"><i class="fa-solid fa-fw fa-brain"></i> Smart Practice</a>
             </div>
             <a href="{{ url_for('main.new_list') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nieuwe Lijst</a>
         </div>
     </nav>
 
-    <main class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <main class="flex-1 py-8">
+        <div class="container mx-auto">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-        {% block content %}{% endblock %}
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
-    <footer>
-        <div class="container">
-            <p>Magistra - Woordjes oefenen</p>
+    <footer class="bg-gray-800 text-gray-400 py-6 text-center mt-12">
+        <div class="container mx-auto">
+            <p class="m-0">Magistra - Woordjes oefenen</p>
         </div>
     </footer>
 </body>

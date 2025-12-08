@@ -2,28 +2,33 @@
 
 @source "./../templates/*.html";
 
-:root {
-    --primary-color: #3b82f6;
-    --card-background: #ffffff;
-    --border-color: #e5e7eb;
-    --text-secondary: #6b7280;
+@layer base {
+    body {
+        @apply font-sans leading-normal text-gray-800 bg-gray-100 min-h-screen flex flex-col;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-semibold;
+    }
+
+    h1 {
+        @apply text-3xl;
+    }
+
+    h2 {
+        @apply text-2xl mb-6 text-gray-800;
+    }
+
+    h3 {
+        @apply text-xl my-6 mb-4 text-gray-700;
+    }
 }
 
-body {
-    @apply font-sans leading-normal text-gray-800 bg-gray-100 min-h-screen flex flex-col;
-}
 
-.container {
-    @apply max-w-7xl mx-auto px-5;
-}
 
 /* Navigation */
 nav {
     @apply bg-gray-800 text-white py-4 shadow-md;
-}
-
-nav .container {
-    @apply flex justify-between items-center;
 }
 
 nav .nav-left {
@@ -39,17 +44,6 @@ nav .nav-link i {
 }
 
 /* Main content */
-main {
-    @apply flex-1 py-8;
-}
-
-h2 {
-    @apply mb-6 text-gray-800;
-}
-
-h3 {
-    @apply my-6 mb-4 text-gray-700;
-}
 
 /* Buttons */
 .btn {
@@ -277,13 +271,4 @@ h3 {
 
 .empty-state a {
     @apply text-blue-500 no-underline hover:underline;
-}
-
-/* Footer */
-footer {
-    @apply bg-gray-800 text-white py-6 text-center mt-12;
-}
-
-footer p {
-    @apply m-0 text-gray-400;
 }

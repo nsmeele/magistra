@@ -13,7 +13,7 @@
             <a href="{{ url_for('main.quiz_start', list_id=word_list.id) }}" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Oefening</a>
             <a href="{{ url_for('main.smart_practice_list', list_id=word_list.id) }}" class="btn btn-secondary"><i class="fas fa-brain"></i> Smart Practice</a>
         {% endif %}
-        <form method="POST" action="{{ url_for('main.delete_list', list_id=word_list.id) }}" style="display: inline;">
+        <form method="POST" action="{{ url_for('main.delete_list', list_id=word_list.id) }}" class="inline">
             {{ delete_form.hidden_tag() }}
             {{ delete_form.submit(class="btn btn-danger", onclick="return confirm('Weet je zeker dat je deze lijst wilt verwijderen?')", value="Lijst Verwijderen") }}
         </form>
@@ -66,7 +66,7 @@
                     </td>
                     <td>
                         <a href="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="btn btn-small btn-secondary"><i class="fa-solid fa-edit"></i></a>
-                        <form method="POST" action="{{ url_for('main.delete_entry', entry_id=entry.id) }}" style="display: inline;">
+                        <form method="POST" action="{{ url_for('main.delete_entry', entry_id=entry.id) }}" class="inline">
                             {{ delete_form.hidden_tag() }}
                             <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Weet je zeker dat je dit item wilt verwijderen?')"><i class="fa-solid fa-trash"></i></button>
                         </form>
