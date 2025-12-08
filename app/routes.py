@@ -5,7 +5,8 @@ from app.views import (AddEntryView, DeleteEntryView, DeleteListView,
                        MixedQuizAnswerView, MixedQuizQuestionView,
                        MixedQuizStartView, MixedQuizView, NewListView,
                        QuizAnswerView, QuizHistoryDetailView, QuizHistoryView,
-                       QuizStartView, QuizView, ResumeQuizView, SmartPracticeView)
+                       QuizStartView, QuizView, ResumeQuizView,
+                       SmartPracticeView)
 
 # Create Blueprint
 bp = Blueprint("main", __name__)

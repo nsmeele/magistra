@@ -54,11 +54,17 @@ class QuizSession(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     quiz_type = db.Column(db.String(20), nullable=False)  # 'single' or 'mixed'
-    direction = db.Column(db.String(20), nullable=False)  # 'forward', 'reverse', 'random'
+    direction = db.Column(
+        db.String(20), nullable=False
+    )  # 'forward', 'reverse', 'random'
     total_questions = db.Column(db.Integer, nullable=False)
     correct_answers = db.Column(db.Integer, nullable=False, default=0)
-    current_index = db.Column(db.Integer, nullable=False, default=0)  # Current question position
-    status = db.Column(db.String(20), nullable=False, default='in_progress')  # 'in_progress', 'completed', 'abandoned'
+    current_index = db.Column(
+        db.Integer, nullable=False, default=0
+    )  # Current question position
+    status = db.Column(
+        db.String(20), nullable=False, default="in_progress"
+    )  # 'in_progress', 'completed', 'abandoned'
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
     duration_seconds = db.Column(db.Integer, nullable=True)
@@ -73,7 +79,9 @@ class QuizSession(db.Model):
     )
 
     def __repr__(self):
-        return f"<QuizSession {self.id} - {self.correct_answers}/{self.total_questions}>"
+        return (
+            f"<QuizSession {self.id} - {self.correct_answers}/{self.total_questions}>"
+        )
 
     @property
     def score_percentage(self):
@@ -87,12 +95,16 @@ class QuizAnswer(db.Model):
     __tablename__ = "quiz_answers"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Integer, db.ForeignKey("quiz_sessions.id"), nullable=False)
+    session_id = db.Column(
+        db.Integer, db.ForeignKey("quiz_sessions.id"), nullable=False
+    )
     entry_id = db.Column(db.Integer, db.ForeignKey("entries.id"), nullable=False)
     user_answer = db.Column(db.String(200), nullable=False)
     correct_answer = db.Column(db.String(200), nullable=False)
     is_correct = db.Column(db.Boolean, nullable=False)
-    question_direction = db.Column(db.String(20), nullable=False)  # 'forward' or 'reverse'
+    question_direction = db.Column(
+        db.String(20), nullable=False
+    )  # 'forward' or 'reverse'
     answered_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationship to entry
@@ -106,7 +118,9 @@ class QuizSessionList(db.Model):
     __tablename__ = "quiz_session_lists"
 
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Integer, db.ForeignKey("quiz_sessions.id"), nullable=False)
+    session_id = db.Column(
+        db.Integer, db.ForeignKey("quiz_sessions.id"), nullable=False
+    )
     list_id = db.Column(db.Integer, db.ForeignKey("lists.id"), nullable=False)
 
     # Relationship to list
