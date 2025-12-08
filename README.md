@@ -11,6 +11,58 @@ Een woordjes overhoring applicatie gebouwd met Flask en PostgreSQL.
   - Mixed quizzes met meerdere lijsten tegelijk
   - Foute antwoorden worden herhaald tot je ze goed hebt
 - Houd scores bij (goed/fout per woord)
+- **AI-gegenereerde lijsten** - Genereer automatisch woordenlijsten met AI
+
+## AI Integraties
+
+Magistra ondersteunt het automatisch genereren van woordenlijsten met behulp van AI. Je kunt een onderwerp opgeven en de AI genereert relevante woorden of zinnen met vertalingen.
+
+### Ondersteunde AI Providers
+
+| Provider | Model | Vereisten |
+|----------|-------|-----------|
+| **OpenAI** | GPT-4o-mini | `OPENAI_API_KEY` in `.env` |
+| **Anthropic** | Claude 3 Haiku | `ANTHROPIC_API_KEY` in `.env` |
+| **Ollama** | Llama 3.2, Mistral, Gemma 2 | Lokale Ollama installatie |
+
+### Configuratie
+
+Voeg de gewenste API keys toe aan je `.env` bestand:
+
+```env
+# OpenAI
+OPENAI_API_KEY=sk-...
+
+# Anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+
+# Ollama (optioneel, standaard localhost:11434)
+OLLAMA_HOST=http://localhost:11434
+```
+
+### Ollama (Gratis, Lokaal)
+
+Voor een gratis lokale oplossing kun je [Ollama](https://ollama.com/) gebruiken:
+
+```bash
+# Installeer Ollama (macOS)
+brew install ollama
+
+# Start Ollama server
+ollama serve
+
+# Download een model (in een andere terminal)
+ollama pull llama3.2
+```
+
+### Gebruik
+
+1. Ga naar "Genereer met AI" in het menu
+2. Kies een AI provider (alleen beschikbare providers worden getoond)
+3. Vul in: onderwerp, brontaal, doeltaal, type (woorden/zinnen), aantal
+4. Bekijk de gegenereerde preview
+5. Selecteer de items die je wilt opslaan
+6. Geef de lijst een naam en sla op
 
 ## Quick Start
 
