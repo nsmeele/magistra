@@ -190,12 +190,18 @@ flask db upgrade head    # Voer alle migraties uit
 
 ⚠️ **Let op:** Gebruik nooit `db.drop_all()` tenzij je bewust alle data wilt verwijderen!
 
-#### 6. (Optioneel) Seed de Database met Latijnse Werkwoorden
+#### 6. (Optioneel) Seed de Database met Voorbeelddata
 
-Om snel te beginnen met oefenen, kun je de database vullen met Latijnse werkwoorden:
+Om snel te beginnen met oefenen, kun je de database vullen met voorbeeldlijsten:
 
 ```bash
-# Seed 12 Latijnse werkwoorden met volledige vervoegingen
+# Seed basis talen (Nederlands, Engels, Latijn, Grieks)
+python seed_languages.py
+
+# Seed Grieks alfabet (25 letters + 16 combinaties)
+python seed_greek_alphabet.py
+
+# Seed 23 Latijnse werkwoorden met volledige vervoegingen (4 tijden)
 python seed_latin_verbs_extended.py
 ```
 
@@ -272,7 +278,9 @@ magistra/
 ├── vite.config.js           # Vite configuratie
 ├── package.json             # Node.js dependencies
 ├── docker-compose.yml       # Docker services (DB + Vite)
-├── seed_latin_verbs_extended.py  # Database seeder
+├── seed_languages.py        # Seed script voor basis talen
+├── seed_greek_alphabet.py   # Seed script voor Grieks alfabet
+├── seed_latin_verbs_extended.py  # Seed script voor Latijnse werkwoorden
 └── requirements.txt         # Python dependencies
 ```
 
@@ -302,7 +310,9 @@ docker compose ps             # Check status
 docker compose logs -f db     # Bekijk database logs
 
 # Database seeding
-python seed_latin_verbs_extended.py    # Seed 12 Latijnse werkwoorden (72 vervoegingen)
+python seed_languages.py                # Seed basis talen (nl, en, la, el)
+python seed_greek_alphabet.py           # Seed Grieks alfabet (41 entries)
+python seed_latin_verbs_extended.py     # Seed 23 Latijnse werkwoorden (552 vervoegingen)
 ```
 
 ### Flask

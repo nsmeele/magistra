@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Seed script for languages (Nederlands, Engels, Latijn)
+Seed script for languages (Dutch, English, Latin, Greek)
 """
 
 from app import create_app, db
@@ -12,9 +12,10 @@ def seed_languages():
 
     with app.app_context():
         languages_data = [
-            {"name": "Nederlands", "code": "nl"},
-            {"name": "Engels", "code": "en"},
-            {"name": "Latijn", "code": "la"},
+            {"name": "Dutch", "code": "nl"},
+            {"name": "English", "code": "en"},
+            {"name": "Latin", "code": "la"},
+            {"name": "Greek", "code": "el"},
         ]
 
         for lang_data in languages_data:

@@ -54,7 +54,7 @@ class AddEntryForm(FlaskForm):
 
     entry_type = SelectField(
         "Type",
-        choices=[("word", "Woord"), ("sentence", "Zin")],
+        choices=[("word", "Woord"), ("sentence", "Zin"), ("letter", "Letter")],
         validators=[DataRequired()],
     )
     source_word = StringField(
@@ -71,7 +71,7 @@ class EditEntryForm(FlaskForm):
 
     entry_type = SelectField(
         "Type",
-        choices=[("word", "Woord"), ("sentence", "Zin")],
+        choices=[("word", "Woord"), ("sentence", "Zin"), ("letter", "Letter")],
         validators=[DataRequired()],
     )
     source_word = StringField(
