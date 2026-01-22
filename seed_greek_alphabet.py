@@ -47,53 +47,56 @@ def seed_greek_alphabet():
 
         db.session.commit()
 
-        # Greek alphabet letters: Greek letter -> Latin transliteration
+        # Greek alphabet letters: (Greek letter, Latin transliteration, pronunciation note)
         alphabet = [
-            ("α", "a"),
-            ("β", "b"),
-            ("γ", "g"),
-            ("δ", "d"),
-            ("ε", "e"),
-            ("ζ", "z"),
-            ("η", "è / ē"),
-            ("θ", "th"),
-            ("ι", "i"),
-            ("κ", "k"),
-            ("λ", "l"),
-            ("μ", "m"),
-            ("ν", "n"),
-            ("ξ", "x"),
-            ("ο", "o"),
-            ("π", "p"),
-            ("ρ", "r"),
-            ("σ", "s"),
-            ("ς", "s"),
-            ("τ", "t"),
-            ("υ", "u / y"),
-            ("φ", "f / ph"),
-            ("χ", "ch"),
-            ("ψ", "ps"),
-            ("ω", "ō / ō"),
+            ("α", "a", None),
+            ("β", "v", "sounds like V in Version"),
+            ("γ", "g", "sounds like 'wh' in what/which"),
+            ("δ", "d", "sounds like 'th' in the"),
+            ("ε", "e", None),
+            ("ζ", "z", None),
+            ("η", "è / ē", None),
+            ("θ", "th", "as in thought, NOT as in the"),
+            ("ι", "è / ē", None),
+            ("κ", "k", None),
+            ("λ", "l", None),
+            ("μ", "m", None),
+            ("ν", "n", None),
+            ("ξ", "x", None),
+            ("ο", "o", None),
+            ("π", "p", None),
+            ("ρ", "r", None),
+            ("σ", "s", None),
+            ("ς", "s", None),
+            ("τ", "t", None),
+            ("υ", "è / ē", None),
+            ("φ", "f / ph", None),
+            ("χ", "ch", None),
+            ("ψ", "ps", None),
+            ("ω", "ō", None),
         ]
 
-        # Greek combination letters (digraphs): Greek -> Latin transliteration
+        # Greek combination letters (digraphs): (Greek, Latin transliteration, pronunciation note)
         combinations = [
-            ("αι", "ai"),
-            ("ει", "ei"),
-            ("οι", "oi"),
-            ("υι", "ui"),
-            ("αυ", "au"),
-            ("ευ", "eu"),
-            ("ηυ", "ēu"),
-            ("ου", "ou"),
-            ("γγ", "ng"),
-            ("γκ", "nk"),
-            ("γξ", "nx"),
-            ("γχ", "nch"),
-            ("μπ", "mp"),
-            ("ντ", "nt"),
-            ("τζ", "tz"),
-            ("τσ", "ts"),
+            ("αι", "e", None),
+            ("αϊ", "a-i", None),
+            ("ει", "è / ē", None),
+            ("εϊ", "e-i", None),
+            ("οι", "è / ē", None),
+            ("οϊ", "o-i", None),
+            ("αυ", "af or av", "depending on the word"),
+            ("αϋ", "a-u", None),
+            ("ευ", "ef or ev", "depending on the word"),
+            ("εϋ", "e-u", None),
+            ("ου", "ou", None),
+            ("γγ", "G", "as in Good"),
+            ("γκ", "G", "as in Good"),
+            ("γξ", "nx", None),
+            ("γχ", "nch", None),
+            ("μπ", "b", None),
+            ("ντ", "d", None),
+            ("τζ", "G", "as in spot G"),
+            ("τσ", "ch", "as in child"),
         ]
 
         # Create FIRST list: Alfabetletters
@@ -107,11 +110,12 @@ def seed_greek_alphabet():
         db.session.flush()  # Flush to get the ID without committing
 
         # Add alphabet entries to first list
-        for greek_letter, transliteration in alphabet:
+        for greek_letter, transliteration, pronunciation_note in alphabet:
             entry = Entry(
                 list_id=letters_list.id,
                 source_word=greek_letter,
                 target_word=transliteration,
+                pronunciation_note=pronunciation_note,
                 entry_type=EntryType.LETTER.value,
             )
             db.session.add(entry)
@@ -127,11 +131,12 @@ def seed_greek_alphabet():
         db.session.flush()  # Flush to get the ID without committing
 
         # Add combination entries to second list
-        for greek_combo, transliteration in combinations:
+        for greek_combo, transliteration, pronunciation_note in combinations:
             entry = Entry(
                 list_id=combinations_list.id,
                 source_word=greek_combo,
                 target_word=transliteration,
+                pronunciation_note=pronunciation_note,
                 entry_type=EntryType.LETTER.value,
             )
             db.session.add(entry)

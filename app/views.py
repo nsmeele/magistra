@@ -152,6 +152,7 @@ class AddEntryView(MethodView):
                     form.source_word.data,
                     form.target_word.data,
                     form.entry_type.data,
+                    form.pronunciation_note.data,
                 )
                 flash("Item toegevoegd!", "success")
             except ValueError as e:
@@ -196,6 +197,7 @@ class EditEntryView(MethodView):
                     form.source_word.data,
                     form.target_word.data,
                     form.entry_type.data,
+                    form.pronunciation_note.data,
                 )
                 flash("Item bijgewerkt!", "success")
                 return redirect(url_for("main.list_detail", list_id=list_id))

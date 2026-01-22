@@ -112,7 +112,7 @@ class ListService:
         self.list_repo.delete(vocab_list)
 
     def add_entry_to_list(
-        self, list_id: int, source_word: str, target_word: str, entry_type: str = "word"
+        self, list_id: int, source_word: str, target_word: str, entry_type: str = "word", pronunciation_note: str = None
     ) -> Entry:
         """Add an entry to a list"""
         vocab_list = self.list_repo.get_by_id(list_id)
@@ -123,11 +123,11 @@ class ListService:
             raise ValueError("Both source and target are required")
 
         return self.entry_repo.create_entry(
-            list_id, source_word, target_word, entry_type
+            list_id, source_word, target_word, entry_type, pronunciation_note
         )
 
     def update_entry(
-        self, entry_id: int, source_word: str, target_word: str, entry_type: str
+        self, entry_id: int, source_word: str, target_word: str, entry_type: str, pronunciation_note: str = None
     ) -> Entry:
         """Update an existing entry"""
         entry = self.entry_repo.get_by_id(entry_id)
@@ -142,6 +142,7 @@ class ListService:
             source_word=source_word,
             target_word=target_word,
             entry_type=entry_type,
+            pronunciation_note=pronunciation_note,
         )
 
     def delete_entry(self, entry_id: int) -> int:

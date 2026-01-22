@@ -17,6 +17,7 @@
             <tr>
                 <th>Brontaal</th>
                 <th>Doeltaal</th>
+                <th>Uitspraak</th>
                 <th>Acties</th>
             </tr>
         </thead>
@@ -25,6 +26,7 @@
                 <tr>
                     <td>{{ entry.source_word }}</td>
                     <td>{{ entry.target_word }}</td>
+                    <td>{{ entry.pronunciation_note or '-' }}</td>
                     <td>
                         <a href="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="btn btn-small btn-secondary"><i class="fa-solid fa-edit"></i></a>
                     </td>

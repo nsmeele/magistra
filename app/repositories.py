@@ -121,7 +121,7 @@ class EntryRepository(BaseRepository):
         return self.model.query.filter_by(list_id=list_id).all()
 
     def create_entry(
-        self, list_id: int, source_word: str, target_word: str, entry_type: str = "word"
+        self, list_id: int, source_word: str, target_word: str, entry_type: str = "word", pronunciation_note: str = None
     ) -> Entry:
         """Create a new entry"""
         return self.create(
@@ -129,6 +129,7 @@ class EntryRepository(BaseRepository):
             source_word=source_word,
             target_word=target_word,
             entry_type=entry_type,
+            pronunciation_note=pronunciation_note,
         )
 
     def update_score(self, entry: Entry, is_correct: bool) -> Entry:

@@ -72,6 +72,7 @@ class Entry(db.Model):
     list_id = db.Column(db.Integer, db.ForeignKey("lists.id"), nullable=False)
     source_word = db.Column(db.String(200), nullable=False)
     target_word = db.Column(db.String(200), nullable=False)
+    pronunciation_note = db.Column(db.String(200), nullable=True)
     entry_type = db.Column(db.String(20), default="word", nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     correct_count = db.Column(db.Integer, default=0)

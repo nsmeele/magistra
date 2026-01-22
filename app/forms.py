@@ -72,6 +72,9 @@ class AddEntryForm(FlaskForm):
     target_word = StringField(
         "Doeltaal", validators=[DataRequired(), Length(min=1, max=500)]
     )
+    pronunciation_note = StringField(
+        "Uitspraak notitie (optioneel)", validators=[Length(max=200)]
+    )
     submit = SubmitField("Toevoegen")
 
 
@@ -88,6 +91,9 @@ class EditEntryForm(FlaskForm):
     )
     target_word = StringField(
         "Doeltaal", validators=[DataRequired(), Length(min=1, max=500)]
+    )
+    pronunciation_note = StringField(
+        "Uitspraak notitie (optioneel)", validators=[Length(max=200)]
     )
     submit = SubmitField("Bijwerken")
 
