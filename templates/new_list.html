@@ -56,20 +56,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Disable the selected source language in target dropdown
         Array.from(targetSelect.options).forEach(option => {
-            if (option.value === sourceValue && option.value !== '') {
-                option.disabled = true;
-            } else {
-                option.disabled = false;
-            }
+            option.disabled = option.value === sourceValue && option.value !== '';
         });
 
         // Disable the selected target language in source dropdown
         Array.from(sourceSelect.options).forEach(option => {
-            if (option.value === targetValue && option.value !== '') {
-                option.disabled = true;
-            } else {
-                option.disabled = false;
-            }
+            option.disabled = option.value === targetValue && option.value !== '';
         });
 
         // If same language is selected, reset the other dropdown

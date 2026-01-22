@@ -15,7 +15,7 @@ class NewListForm(FlaskForm):
     def __init__(self, languages=None, categories=None, *args, **kwargs):
         super(NewListForm, self).__init__(*args, **kwargs)
         if languages:
-            lang_choices = [(lang.id, lang.name) for lang in languages]
+            lang_choices = [(0, '- Selecteer -')] + [(lang.id, lang.name) for lang in languages]
             self.source_language_id.choices = lang_choices
             self.target_language_id.choices = lang_choices
         else:
@@ -28,8 +28,15 @@ class NewListForm(FlaskForm):
         else:
             self.category_id.choices = [(0, "Geen categorie")]
 
+    def validate_source_language_id(self, field):
+        """Validate that a source language is selected"""
+        if field.data == 0:
+            raise ValidationError("Selecteer een brontaal")
+
     def validate_target_language_id(self, field):
-        """Validate that source and target languages are different"""
+        """Validate that target language is selected and different from source"""
+        if field.data == 0:
+            raise ValidationError("Selecteer een doeltaal")
         if field.data == self.source_language_id.data:
             raise ValidationError("Bron- en doeltaal moeten verschillend zijn")
 
@@ -120,74 +127,3 @@ class QuizDirectionForm(FlaskForm):
                 ("forward", "Brontaal → Doeltaal"),
                 ("reverse", "Doeltaal → Brontaal"),
             ]
-
-
-class AIGenerateForm(FlaskForm):
-    """Form voor het genereren van een lijst met AI"""
-
-    provider = SelectField(
-        "AI Provider",
-        validators=[DataRequired()],
-    )
-    topic = StringField(
-        "Onderwerp",
-        validators=[DataRequired(), Length(min=1, max=200)],
-    )
-    entry_type = SelectField(
-        "Type",
-        choices=[("word", "Woorden"), ("sentence", "Zinnen")],
-        validators=[DataRequired()],
-    )
-    source_language_id = SelectField(
-        "Brontaal",
-        coerce=int,
-        validators=[DataRequired()],
-    )
-    target_language_id = SelectField(
-        "Doeltaal",
-        coerce=int,
-        validators=[DataRequired()],
-    )
-    count = SelectField(
-        "Aantal items",
-        choices=[
-            ("", "Automatisch"),
-            ("5", "5"),
-            ("10", "10"),
-            ("15", "15"),
-            ("20", "20"),
-        ],
-        default="10",
-    )
-    submit = SubmitField("Genereer Lijst")
-
-    def __init__(self, providers=None, languages=None, *args, **kwargs):
-        super(AIGenerateForm, self).__init__(*args, **kwargs)
-        if providers:
-            self.provider.choices = [
-                (p["key"], p["name"]) for p in providers if p["available"]
-            ]
-        else:
-            self.provider.choices = []
-        if languages:
-            lang_choices = [(lang.id, lang.name) for lang in languages]
-            self.source_language_id.choices = lang_choices
-            self.target_language_id.choices = lang_choices
-        else:
-            self.source_language_id.choices = []
-            self.target_language_id.choices = []
-
-    def validate_target_language_id(self, field):
-        """Validate that source and target languages are different"""
-        if field.data == self.source_language_id.data:
-            raise ValidationError("Bron- en doeltaal moeten verschillend zijn")
-
-
-class SaveGeneratedListForm(FlaskForm):
-    """Form voor het opslaan van een gegenereerde lijst"""
-
-    list_name = StringField(
-        "Lijstnaam",
-        validators=[DataRequired(), Length(min=1, max=100)],
-    )
-    submit = SubmitField("Opslaan als Nieuwe Lijst")
