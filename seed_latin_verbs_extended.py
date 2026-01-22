@@ -11,6 +11,7 @@ ambulare (to walk)
 """
 
 from app import create_app, db
+from app.constants import EntryType
 from app.models import Entry, Language, List
 
 
@@ -1131,7 +1132,7 @@ def seed_extended_latin_verbs():
                     list_id=verb_list.id,
                     source_word=latin,
                     target_word=english,
-                    entry_type="verb",
+                    entry_type=EntryType.VERB.value,
                 )
                 db.session.add(entry)
                 total_conjugations += 1

@@ -53,7 +53,7 @@
         <tbody>
             {% for entry in word_list.entries %}
                 <tr>
-                    <td>{{ 'Zin' if entry.entry_type == 'sentence' else 'Woord' }}</td>
+                    <td>{{ entry.entry_type | entry_type_label }}</td>
                     <td>{{ entry.source_word }}</td>
                     <td>{{ entry.target_word }}</td>
                     <td>

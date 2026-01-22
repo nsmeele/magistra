@@ -2,6 +2,8 @@ from flask_wtf import FlaskForm
 from wtforms import SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Length, ValidationError
 
+from app.constants import EntryType
+
 
 class NewListForm(FlaskForm):
     """Form voor het aanmaken van een nieuwe lijst"""
@@ -61,7 +63,7 @@ class AddEntryForm(FlaskForm):
 
     entry_type = SelectField(
         "Type",
-        choices=[("word", "Woord"), ("sentence", "Zin"), ("letter", "Letter")],
+        choices=EntryType.choices(),
         validators=[DataRequired()],
     )
     source_word = StringField(
@@ -78,7 +80,7 @@ class EditEntryForm(FlaskForm):
 
     entry_type = SelectField(
         "Type",
-        choices=[("word", "Woord"), ("sentence", "Zin"), ("letter", "Letter")],
+        choices=EntryType.choices(),
         validators=[DataRequired()],
     )
     source_word = StringField(

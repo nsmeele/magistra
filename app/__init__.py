@@ -28,6 +28,13 @@ def create_app(config_class=Config):
         except (ValueError, TypeError):
             return 0.0
 
+    # Custom Jinja2 filter for entry type labels
+    @app.template_filter('entry_type_label')
+    def entry_type_label_filter(entry_type_value):
+        """Convert entry_type waarde naar Nederlands label"""
+        from app.constants import EntryType
+        return EntryType.get_label(entry_type_value)
+
     # Vite manifest helpers
     @app.context_processor
     def vite_helpers():

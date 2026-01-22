@@ -4,6 +4,7 @@ Seed script for Greek alphabet list with all letters and combination letters
 """
 
 from app import create_app, db
+from app.constants import EntryType
 from app.models import Entry, Language, List, QuizSession
 
 
@@ -111,7 +112,7 @@ def seed_greek_alphabet():
                 list_id=letters_list.id,
                 source_word=greek_letter,
                 target_word=transliteration,
-                entry_type="letter",
+                entry_type=EntryType.LETTER.value,
             )
             db.session.add(entry)
 
@@ -131,7 +132,7 @@ def seed_greek_alphabet():
                 list_id=combinations_list.id,
                 source_word=greek_combo,
                 target_word=transliteration,
-                entry_type="letter",
+                entry_type=EntryType.LETTER.value,
             )
             db.session.add(entry)
 
