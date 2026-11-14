@@ -66,7 +66,8 @@ Worth knowing, so you don't come a cropper:
 - **`yarn dev` won't work here.** Flask finds the assets through `static/dist/.vite/manifest.json` and never talks to Vite's dev server. Use `build --watch` and refresh the page instead.
 - **Changed `requirements*.txt`?** Rebuild the image with `docker compose build app`.
 - **The database says it's migrated but the tables are missing?** Reset the migration marker and run the migrations again: `docker compose run --rm app sh -c "flask --app run db stamp base && flask --app run db upgrade"`.
-- **Using PyCharm?** Set the project interpreter to *Docker Compose*, service `app`, so autocomplete uses the container's packages.
+- **Using VS Code?** Install the *Dev Containers* extension and pick **Reopen in Container**. `.devcontainer/devcontainer.json` hooks the editor up to the `app` service, so autocomplete, the debugger and the tests use the container's Python, and Black, isort and flake8 come pre-installed. No local venv needed.
+- **Using PyCharm?** You'll need PyCharm Pro for this one: set the project interpreter to *Docker Compose*, service `app`. The free version can't use Docker interpreters.
 
 ### Where everything lives
 
