@@ -14,7 +14,7 @@ Everything runs in Docker, so you don't need Python or Node on your machine. Jus
 
 ```bash
 docker compose run --rm vite
-docker compose run --rm vite yarn build
+docker compose run --rm vite npm run build
 ```
 
 **2. Fire up the app.** This builds the image and starts Postgres along with it:
@@ -55,7 +55,7 @@ The database settings are already in `docker-compose.yml`, so you don't need a `
 | format and lint the code                 | `docker compose run --rm app sh -c "black . && isort . && flake8 ."`     |
 | create a migration for a model change    | `docker compose run --rm app flask --app run db migrate -m "what's changing"` |
 | apply that migration                     | `docker compose run --rm app flask --app run db upgrade`                 |
-| rebuild CSS and JS as I go               | `docker compose run --rm vite yarn build --watch`                        |
+| rebuild CSS and JS as I go               | `docker compose run --rm vite npm run build -- --watch` |
 | see what the app is moaning about        | `docker compose logs -f app`                                             |
 | pack it all in for the day               | `docker compose down`                                                    |
 
@@ -63,7 +63,7 @@ Worth knowing, so you don't come a cropper:
 
 - **The tests don't need the database.** `tests/conftest.py` runs them on in-memory SQLite. Easy peasy.
 - **Give a migration a once-over before you apply it.** Alembic doesn't catch every change, such as renamed columns or altered enum values, and a dodgy migration's a right faff to undo.
-- **`yarn dev` won't work here.** Flask finds the assets through `static/dist/.vite/manifest.json` and never talks to Vite's dev server. Use `build --watch` and refresh the page instead.
+- **There's no Vite dev server here.** Flask finds the assets through `static/dist/.vite/manifest.json` and never talks to Vite's dev server. Use `build --watch` and refresh the page instead.
 - **Changed `requirements*.txt`?** Rebuild the image with `docker compose build app`.
 - **The database says it's migrated but the tables are missing?** Reset the migration marker and run the migrations again: `docker compose run --rm app sh -c "flask --app run db stamp base && flask --app run db upgrade"`.
 - **Using VS Code?** Install the *Dev Containers* extension and pick **Reopen in Container**. `.devcontainer/devcontainer.json` hooks the editor up to the `app` service, so autocomplete, the debugger and the tests use the container's Python, and Black, isort and flake8 come pre-installed. No local venv needed.

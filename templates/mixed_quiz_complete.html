@@ -5,7 +5,7 @@
 {% block content %}
 <div class="quiz-complete">
     <div class="complete-icon">
-        <i class="fas fa-trophy"></i>
+        <i class="fa-solid fa-trophy"></i>
     </div>
 
     <h2>Quiz Voltooid!</h2>
@@ -38,13 +38,13 @@
 
     <div class="quiz-actions">
         <a href="{{ url_for('main.mixed_quiz') }}" class="btn btn-primary">
-            <i class="fas fa-redo"></i> Nieuwe Gemengde Quiz
+            <i class="fa-solid fa-arrow-rotate-right"></i> Nieuwe Gemengde Quiz
         </a>
         <a href="{{ url_for('main.quiz_history') }}" class="btn btn-secondary">
-            <i class="fas fa-history"></i> Bekijk Geschiedenis
+            <i class="fa-solid fa-clock-rotate-left"></i> Bekijk Geschiedenis
         </a>
         <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
-            <i class="fas fa-home"></i> Terug naar Home
+            <i class="fa-solid fa-house"></i> Terug naar Home
         </a>
     </div>
 </div>

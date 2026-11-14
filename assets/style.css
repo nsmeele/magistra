@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
-@source "./../templates/*.html";
+@source "../templates/**/*.html";
 
 @layer base {
     body {
-        @apply font-sans leading-normal text-gray-800 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 min-h-screen flex flex-col;
+        @apply font-sans leading-normal text-gray-800 bg-linear-to-br from-slate-50 via-blue-50 to-purple-50 min-h-screen flex flex-col;
     }
 
     h1, h2, h3, h4, h5, h6 {
@@ -28,7 +28,7 @@
 
 /* Navigation */
 nav {
-    @apply bg-gradient-to-r from-gray-900 to-gray-800 text-white py-4 shadow-md;
+    @apply bg-linear-to-r from-gray-900 to-gray-800 text-white py-4 shadow-md;
 }
 
 nav .nav-left {
@@ -51,7 +51,7 @@ nav .nav-link i {
 }
 
 .btn-primary {
-    @apply bg-gradient-to-r from-blue-900 to-purple-600 text-white hover:from-blue-800 hover:to-purple-500 shadow-md hover:shadow-lg;
+    @apply bg-linear-to-r from-blue-900 to-purple-600 text-white hover:from-blue-800 hover:to-purple-500 shadow-md hover:shadow-lg;
 }
 
 .btn-secondary {
@@ -131,7 +131,7 @@ nav .nav-link i {
 
 .form-group input[type="text"],
 .form-group select {
-    @apply w-full px-3 py-3 border border-gray-300 rounded-xl text-base bg-white focus:outline-none focus:border-blue-500;
+    @apply w-full px-3 py-3 border border-gray-300 rounded-xl text-base bg-white focus:outline-hidden focus:border-blue-500;
 }
 
 .form-group select {
@@ -228,7 +228,7 @@ nav .nav-link i {
 }
 
 .quiz-form input[type="text"] {
-    @apply w-full p-4 text-xl border-2 border-gray-300 rounded-xl mb-6 focus:outline-none focus:border-blue-500;
+    @apply w-full p-4 text-xl border-2 border-gray-300 rounded-xl mb-6 focus:outline-hidden focus:border-blue-500;
 }
 
 /* Quiz complete */

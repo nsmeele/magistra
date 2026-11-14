@@ -6,6 +6,8 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+# Runs the same Docker commands as the README, so CI uses the exact Python
+# version and packages from the dev image (Dockerfile target `dev`).
 jobs:
   lint:
     name: Code Quality Check
@@ -14,70 +16,34 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 black isort
-        pip install -r requirements.txt
+    - name: Build dev image
+      run: docker compose build app
 
     - name: Run Black (code formatter check)
-      run: black --check .
+      run: docker compose run --rm --no-deps app black --check .
       continue-on-error: true
 
     - name: Run isort (import sorting check)
-      run: isort --check-only .
+      run: docker compose run --rm --no-deps app isort --check-only .
       continue-on-error: true
 
     - name: Run Flake8 (linting)
-      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      run: docker compose run --rm --no-deps app flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
       continue-on-error: true
 
   test:
     name: Run Tests
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_DB: magistra_test
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
+    - name: Build dev image
+      run: docker compose build app
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-flask
-
+    # Tests use in-memory SQLite (tests/conftest.py), so no database service is needed
     - name: Run tests with coverage
-      env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/magistra_test
-        SECRET_KEY: test-secret-key-for-ci
-      run: |
-        pytest --cov=app --cov-report=xml --cov-report=term-missing
+      run: docker compose run --rm --no-deps app pytest --cov=app --cov-report=xml --cov-report=term-missing
       continue-on-error: true
 
     - name: Upload coverage reports

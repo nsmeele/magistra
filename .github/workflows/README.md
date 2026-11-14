@@ -8,8 +8,9 @@ Dit project gebruikt GitHub Actions voor CI/CD.
 **Triggers:** Push en PR naar `main` of `develop` branches
 
 **Wat het doet:**
+- Bouwt de `dev`-image en draait alles daarin, met dezelfde commando's als de hoofd-README
 - Lint code met Black, isort, en Flake8
-- Draait pytest tests met PostgreSQL service
+- Draait pytest tests (in-memory SQLite, geen database nodig)
 - Genereert coverage reports
 
 **Status Badge:**
@@ -72,18 +73,17 @@ Ga naar GitHub Repository → Settings → Secrets and variables → Actions
 - `VPS_USERNAME` - SSH username
 - `VPS_SSH_KEY` - Private SSH key
 
-## Lokaal testen
+## Testen op je eigen machine (via Docker)
 
-Test de Docker build lokaal:
+Test de productie-image:
 ```bash
 docker build -t magistra:test .
-docker run -p 5000:5000 magistra:test
+docker run -p 5001:5001 -e SECRET_KEY=… -e DATABASE_URL=… magistra:test
 ```
 
-Run tests lokaal:
+Run tests (zoals CI):
 ```bash
-pip install pytest pytest-cov pytest-flask
-pytest --cov=app
+docker compose run --rm --no-deps app pytest --cov=app
 ```
 
 ## Deployment Strategie
