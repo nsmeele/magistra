@@ -1,88 +1,98 @@
 {% extends "base.html" %}
 
-{% block title %}Nieuwe Lijst - Magistra{% endblock %}
+{% block title %}Nieuwe lijst - Magistra{% endblock %}
 
 {% block content %}
-<h2>Nieuwe Woordenlijst</h2>
+{% macro control(field) -%}
+    {%- set attrs = dict(kwargs) -%}
+    {%- if field.errors %}{% set _ = attrs.update({'aria-invalid': 'true', 'aria-describedby': field.id ~ '-error'}) %}{% endif -%}
+    {{ field(**attrs) }}
+{%- endmacro %}
 
-<form method="POST" class="form" id="newListForm">
-    {{ form.hidden_tag() }}
-    <div class="form-group">
-        {{ form.name.label }}
-        {{ form.name(class="form-control", autofocus=True) }}
-        {% if form.name.errors %}
-            <span class="error">{{ form.name.errors[0] }}</span>
-        {% endif %}
+{% macro errors(field) -%}
+    {% if field.errors %}
+        <p class="field-error" id="{{ field.id }}-error"><i class="fa-solid fa-circle-exclamation"></i> {{ field.errors[0] }}</p>
+    {% endif %}
+{%- endmacro %}
+
+<div class="max-w-2xl mx-auto lg:max-w-none lg:mx-0">
+    <a href="{{ url_for('main.index') }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Alle lijsten</a>
+
+    <header class="mb-8">
+        <p class="eyebrow">Nieuw</p>
+        <h1 class="page-title">Nieuwe woordenlijst</h1>
+        <p class="page-subtitle">Geef je lijst een naam en kies van welke taal naar welke taal je oefent.</p>
+    </header>
+
+    <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-8 lg:items-start xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-10">
+    <form method="POST" action="{{ url_for('main.new_list') }}" class="card card-pad flex flex-col gap-6" id="newListForm" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="field{% if form.name.errors %} has-error{% endif %}">
+            {{ form.name.label(text="Naam") }}
+            {{ control(form.name, autofocus=True, autocomplete="off", placeholder="Bijv. Spaans hoofdstuk 3", maxlength=100) }}
+            {{ errors(form.name) }}
+        </div>
+
+        <fieldset class="min-w-0">
+            <legend class="label mb-3">Talen</legend>
+            {% if not form.source_language_id.choices %}
+                <p class="help mb-3"><i class="fa-solid fa-circle-info"></i> Er zijn nog geen talen beschikbaar. Voeg eerst talen toe aan de database.</p>
+            {% endif %}
+            <div class="language-pair">
+                <div class="field{% if form.source_language_id.errors %} has-error{% endif %}">
+                    {{ form.source_language_id.label(text="Van", class="text-xs font-medium uppercase tracking-wider text-muted") }}
+                    {{ control(form.source_language_id, id="source_language_id") }}
+                    {{ errors(form.source_language_id) }}
+                </div>
+
+                <button type="button" class="btn btn-secondary btn-icon language-swap" data-swap-languages aria-label="Talen omwisselen" title="Talen omwisselen">
+                    <i class="fa-solid fa-right-left"></i>
+                </button>
+
+                <div class="field{% if form.target_language_id.errors %} has-error{% endif %}">
+                    {{ form.target_language_id.label(text="Naar", class="text-xs font-medium uppercase tracking-wider text-muted") }}
+                    {{ control(form.target_language_id, id="target_language_id") }}
+                    {{ errors(form.target_language_id) }}
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="field{% if form.category_id.errors %} has-error{% endif %}">
+            {{ form.category_id.label(text="Categorie") }}
+            {{ control(form.category_id) }}
+            <p class="help">Optioneel, handig om lijsten te groeperen.</p>
+            {{ errors(form.category_id) }}
+        </div>
+
+        <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+            <a href="{{ url_for('main.index') }}" class="btn btn-ghost">Annuleren</a>
+            <button type="submit" name="submit" value="Lijst Aanmaken" class="btn btn-primary sm:min-w-44"><i class="fa-solid fa-check"></i> Lijst aanmaken</button>
+        </div>
+    </form>
+
+    {#- Desktop side panel: what happens after creating the list. -#}
+    <aside class="form-aside hidden lg:flex" aria-labelledby="new-list-steps">
+        <h2 id="new-list-steps" class="form-aside-title">Zo werkt het</h2>
+        <ol class="form-steps">
+            <li class="is-current">
+                <span class="form-step-num">1</span>
+                <span><strong>Maak de lijst aan.</strong> Een naam en twee talen zijn genoeg.</span>
+            </li>
+            <li>
+                <span class="form-step-num">2</span>
+                <span><strong>Voeg woorden toe</strong> vanuit de lijst, één voor één.</span>
+            </li>
+            <li>
+                <span class="form-step-num">3</span>
+                <span><strong>Oefen</strong> met een quiz of Smart Practice.</span>
+            </li>
+        </ol>
+        <div class="form-tip">
+            <p class="eyebrow mb-1.5"><i class="fa-solid fa-circle-info"></i> Van en naar</p>
+            <p>Bij een quiz “heen” zie je het woord in de <strong class="text-ink">van</strong>-taal en antwoord je in de <strong class="text-ink">naar</strong>-taal. Je kunt later ook terug of willekeurig oefenen.</p>
+        </div>
+    </aside>
     </div>
-
-    <div class="form-group">
-        {{ form.source_language_id.label(text="Van (taal):") }}
-        {{ form.source_language_id(class="form-control", id="source_language_id") }}
-        {% if form.source_language_id.errors %}
-            <span class="error">{{ form.source_language_id.errors[0] }}</span>
-        {% endif %}
-    </div>
-
-    <div class="form-group">
-        {{ form.target_language_id.label(text="Naar (taal):") }}
-        {{ form.target_language_id(class="form-control", id="target_language_id") }}
-        {% if form.target_language_id.errors %}
-            <span class="error">{{ form.target_language_id.errors[0] }}</span>
-        {% endif %}
-    </div>
-
-    <div class="form-group">
-        {{ form.category_id.label }}
-        {{ form.category_id(class="form-control") }}
-        {% if form.category_id.errors %}
-            <span class="error">{{ form.category_id.errors[0] }}</span>
-        {% endif %}
-    </div>
-
-    <div class="form-actions">
-        {{ form.submit(class="btn btn-primary") }}
-        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Annuleren</a>
-    </div>
-</form>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const sourceSelect = document.getElementById('source_language_id');
-    const targetSelect = document.getElementById('target_language_id');
-
-    function validateLanguageSelection() {
-        const sourceValue = sourceSelect.value;
-        const targetValue = targetSelect.value;
-
-        // Disable the selected source language in target dropdown
-        Array.from(targetSelect.options).forEach(option => {
-            option.disabled = option.value === sourceValue && option.value !== '';
-        });
-
-        // Disable the selected target language in source dropdown
-        Array.from(sourceSelect.options).forEach(option => {
-            option.disabled = option.value === targetValue && option.value !== '';
-        });
-
-        // If same language is selected, reset the other dropdown
-        if (sourceValue === targetValue && sourceValue !== '') {
-            // If user just changed source, reset target
-            if (document.activeElement === sourceSelect) {
-                targetSelect.value = '';
-            }
-            // If user just changed target, reset source
-            else if (document.activeElement === targetSelect) {
-                sourceSelect.value = '';
-            }
-        }
-    }
-
-    // Run validation on change
-    sourceSelect.addEventListener('change', validateLanguageSelection);
-    targetSelect.addEventListener('change', validateLanguageSelection);
-
-    // Run initial validation on page load
-    validateLanguageSelection();
-});
-</script>
+</div>
 {% endblock %}

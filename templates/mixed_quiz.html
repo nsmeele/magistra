@@ -1,60 +1,80 @@
 {% extends "base.html" %}
+{% import "_quiz_macros.html" as q with context %}
 
-{% block title %}Gemengde Quiz - Magistra{% endblock %}
+{% block title %}Gemengde quiz - Magistra{% endblock %}
 
 {% block content %}
-<h2>Gemengde Quiz</h2>
-<p class="subtitle">Selecteer meerdere lijsten om samen te oefenen</p>
+<a href="{{ url_for('main.index') }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Mijn lijsten</a>
+
+<header class="page-head">
+    <div>
+        <p class="eyebrow">Gemengde quiz</p>
+        <h1 class="page-title">Combineer je lijsten</h1>
+        <p class="page-subtitle">Kies een of meer lijsten en oefen alle woorden door elkaar.</p>
+    </div>
+</header>
 
 {% if language_pairs %}
-    <form method="POST" action="{{ url_for('main.mixed_quiz_start') }}">
-        {% for lang_pair, lists in language_pairs.items() %}
-            <div class="language-group">
-                <h3 class="language-header">{{ lang_pair }}</h3>
-                <div class="lists-selection">
-                    {% for list in lists %}
-                        <div class="list-checkbox">
-                            <input type="checkbox"
-                                   name="list_ids"
-                                   value="{{ list.id }}"
-                                   id="list_{{ list.id }}"
-                                   {% if lists|length == 1 %}checked{% endif %}>
-                            <label for="list_{{ list.id }}">
-                                <strong>{{ list.name }}</strong>
-                                <span class="word-count">({{ list.entries|length }} item{% if list.entries|length != 1 %}s{% endif %})</span>
+    <form method="POST" action="{{ url_for('main.mixed_quiz_start') }}" class="flex flex-col gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_19rem] lg:gap-8 lg:items-start" data-mixed-form>
+        <div class="flex flex-col gap-8 list-pick">
+            {% for lang_pair, lists in language_pairs.items() %}
+                {% set group_id = 'group-' ~ loop.index %}
+                <section class="flex flex-col gap-3" data-list-group aria-labelledby="{{ group_id }}">
+                    <div class="flex items-center justify-between gap-3">
+                        <h2 id="{{ group_id }}" class="text-lg flex items-center gap-2 min-w-0">
+                            <span class="grid place-items-center size-8 shrink-0 rounded-lg bg-primary-soft text-primary text-sm"><i class="fa-solid fa-language"></i></span>
+                            <span class="truncate">{{ lang_pair }}</span>
+                        </h2>
+                        {% if lists|length > 1 %}
+                            <button type="button" class="btn btn-ghost btn-sm shrink-0" data-select-all aria-pressed="false">Alles selecteren</button>
+                        {% endif %}
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" data-reveal>
+                        {% for list in lists %}
+                            {% set count = list.entries|length %}
+                            <label class="choice items-center">
+                                <input type="checkbox" name="list_ids" value="{{ list.id }}" data-list-checkbox data-count="{{ count }}"{% if lists|length == 1 and language_pairs|length == 1 %} checked{% endif %}>
+                                <span class="choice-icon" aria-hidden="true"><i class="fa-solid fa-layer-group"></i></span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="choice-title block truncate">{{ list.name }}</span>
+                                    <span class="choice-desc block">{{ count }} item{% if count != 1 %}s{% endif %}</span>
+                                </span>
+                                <span class="choice-check rounded-md" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
                             </label>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endfor %}
-
-        <div class="language-group">
-            <h3 class="language-header">Quiz Richting</h3>
-            <div class="form-group">
-                <label for="direction">Kies de richting:</label>
-                <select name="direction" id="direction" class="form-control">
-                    <option value="random" selected>Willekeurig (beide richtingen)</option>
-                    <option value="forward">Brontaal → Doeltaal</option>
-                    <option value="reverse">Doeltaal → Brontaal</option>
-                </select>
-                <p class="help-text">
-                    <strong>Willekeurig:</strong> Bij elke vraag wordt willekeurig gekozen uit beide richtingen<br>
-                    <strong>Brontaal → Doeltaal:</strong> Je krijgt vragen in de brontaal en moet vertalen naar de doeltaal<br>
-                    <strong>Doeltaal → Brontaal:</strong> Je krijgt vragen in de doeltaal en moet vertalen naar de brontaal
-                </p>
-            </div>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endfor %}
         </div>
 
-        <div class="form-actions">
-            <a href="{{ url_for('main.index') }}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Terug</a>
-            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Quiz</button>
+        {# Side panel on desktop; below lg its children flow in the form as before. #}
+        <div class="contents lg:flex lg:flex-col lg:gap-4 lg:sticky lg:top-8">
+            <section class="flex flex-col gap-3 lg:p-5 lg:rounded-2xl lg:border lg:border-line lg:bg-surface" aria-labelledby="direction-title">
+                <h2 id="direction-title" class="text-lg">Richting</h2>
+                {{ q.direction_choices([
+                    ('random', 'Willekeurig', 'Elke vraag kiest willekeurig een van beide richtingen.'),
+                    ('forward', 'Brontaal → doeltaal', 'Je ziet een woord in de brontaal en vertaalt naar de doeltaal.'),
+                    ('reverse', 'Doeltaal → brontaal', 'Je ziet een woord in de doeltaal en vertaalt naar de brontaal.'),
+                ], compact=True) }}
+            </section>
+
+            <div class="mixed-bar" data-mixed-bar>
+                <div class="min-w-0 text-sm" aria-live="polite">
+                    <p class="font-semibold text-ink"><span class="inline-block tabular-nums" data-selected-lists>0</span> <span data-selected-lists-label>lijsten</span><span class="hidden sm:inline"> geselecteerd</span></p>
+                    <p class="text-muted"><span class="tabular-nums" data-selected-items>0</span> items in totaal</p>
+                </div>
+                <button type="submit" class="btn btn-primary shrink-0" data-mixed-submit>
+                    <i class="fa-solid fa-play"></i> Start quiz
+                </button>
+            </div>
         </div>
     </form>
 {% else %}
-    <p class="empty-state">
-        Je hebt nog geen woordenlijsten.
-        <a href="{{ url_for('main.new_list') }}">Maak je eerste lijst aan!</a>
-    </p>
+    <div class="empty">
+        <span class="empty-icon"><i class="fa-solid fa-layer-group"></i></span>
+        <h2 class="text-xl">Nog geen lijsten</h2>
+        <p class="text-muted max-w-sm">Maak eerst een woordenlijst aan, dan kun je hier meerdere lijsten tegelijk oefenen.</p>
+        <a href="{{ url_for('main.new_list') }}" class="btn btn-primary mt-2"><i class="fa-solid fa-plus"></i> Maak je eerste lijst</a>
+    </div>
 {% endif %}
 {% endblock %}

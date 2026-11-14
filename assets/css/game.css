@@ -1,0 +1,302 @@
+/* Game layer: topbar HUD, profile page, daily card and mastery stars. */
+@layer components {
+    /* ------------------------------------------------------------------ */
+    /* Topbar HUD                                                          */
+    /* ------------------------------------------------------------------ */
+
+    .hud {
+        @apply inline-flex items-center gap-1 h-10 pl-2.5 pr-1 rounded-full border border-line bg-surface text-sm font-semibold text-ink no-underline shrink-0;
+        box-shadow: var(--shadow-sm);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.25s cubic-bezier(.34, 1.56, .64, 1);
+    }
+
+    .hud:hover {
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow);
+    }
+
+    .hud:active {
+        transform: scale(0.96);
+    }
+
+    .hud[aria-current="page"] {
+        border-color: var(--primary);
+    }
+
+    .hud-streak {
+        @apply inline-flex items-center gap-1 pr-1.5 tabular-nums text-subtle;
+    }
+
+    .hud-streak svg {
+        @apply text-[0.95rem];
+    }
+
+    .hud-streak.is-lit {
+        color: var(--text);
+    }
+
+    .hud-streak.is-lit svg {
+        color: var(--warning);
+        filter: drop-shadow(0 0 4px color-mix(in oklab, var(--warning) 55%, transparent));
+        transform-origin: 50% 90%;
+        animation: flame-flicker 2.4s ease-in-out infinite;
+    }
+
+    .hud-level {
+        @apply inline-flex items-center gap-1.5;
+    }
+
+    /* Small XP ring with the level number inside */
+    .mini-ring {
+        --value: 0;
+        @apply relative grid place-items-center size-8 rounded-full shrink-0 text-xs font-bold tabular-nums;
+        background: conic-gradient(var(--ring-color, var(--primary)) calc(var(--value) * 1%), var(--surface-3) 0);
+    }
+
+    .mini-ring::after {
+        content: "";
+        @apply absolute rounded-full bg-surface;
+        inset: 3px;
+    }
+
+    .mini-ring > * {
+        @apply relative z-10;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Profile hero                                                        */
+    /* ------------------------------------------------------------------ */
+
+    .game-hero {
+        @apply relative overflow-hidden;
+        background:
+            radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--primary-soft) 80%, transparent), transparent 60%),
+            var(--surface);
+    }
+
+    .game-hero::before {
+        /* faint laurel-like arcs as decoration */
+        content: "";
+        @apply absolute pointer-events-none rounded-full;
+        width: 26rem;
+        height: 26rem;
+        right: -9rem;
+        top: -12rem;
+        border: 1px solid color-mix(in oklab, var(--primary) 14%, transparent);
+        box-shadow: 0 0 0 2.5rem color-mix(in oklab, var(--primary) 4%, transparent);
+    }
+
+    .score-ring.medallion-ring {
+        --size: 8.5rem;
+        --ring-color: var(--primary);
+    }
+
+    .score-ring.medallion-ring::after {
+        inset: 0.6rem;
+        background: radial-gradient(circle at 50% 35%, var(--surface), var(--surface-2));
+        box-shadow: inset 0 0 0 1px var(--border);
+    }
+
+    .medallion-level {
+        @apply font-serif text-5xl font-semibold leading-none tabular-nums tracking-tight;
+        color: var(--primary);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Stat tiles                                                          */
+    /* ------------------------------------------------------------------ */
+
+    .game-tile {
+        @apply bg-surface rounded-2xl border border-line p-4 sm:p-5 flex flex-col gap-1;
+        box-shadow: var(--shadow);
+    }
+
+    .game-tile-icon {
+        @apply grid place-items-center size-9 rounded-xl mb-2 text-[0.95rem];
+        background: var(--tone-soft, var(--surface-2));
+        color: var(--tone, var(--text-muted));
+    }
+
+    .game-tile .stat-value {
+        @apply text-2xl sm:text-3xl;
+    }
+
+    .score-ring.goal-ring {
+        --size: 7rem;
+        --ring-color: var(--warning);
+    }
+
+    .score-ring.goal-ring.is-done {
+        --ring-color: var(--success);
+    }
+
+    .score-ring.goal-ring::after {
+        inset: 0.55rem;
+    }
+
+    .flame-big {
+        @apply grid place-items-center size-14 rounded-2xl text-2xl shrink-0;
+        background: var(--surface-2);
+        color: var(--text-subtle);
+    }
+
+    .flame-big.is-lit {
+        background: var(--warning-soft);
+        color: var(--warning);
+    }
+
+    .flame-big.is-lit svg {
+        transform-origin: 50% 90%;
+        animation: flame-flicker 2.4s ease-in-out infinite;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Achievements                                                        */
+    /* ------------------------------------------------------------------ */
+
+    .achievement {
+        @apply relative flex flex-col items-center text-center gap-2 rounded-2xl border border-line bg-surface p-4 pt-5;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .achievement.is-locked {
+        @apply bg-surface-2;
+        box-shadow: none;
+    }
+
+    .achievement.is-next {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--ring);
+    }
+
+    .achievement-bijna {
+        @apply absolute -top-2.5 left-1/2 -translate-x-1/2 py-0.5 whitespace-nowrap;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .medal {
+        @apply relative grid place-items-center size-14 rounded-full text-xl shrink-0;
+        color: var(--tone);
+        background:
+            radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--surface) 70%, transparent), transparent 55%),
+            var(--tone-soft);
+        box-shadow:
+            inset 0 0 0 2px color-mix(in oklab, var(--tone) 45%, transparent),
+            0 0 0 4px var(--surface),
+            0 0 0 5px color-mix(in oklab, var(--tone) 25%, transparent);
+    }
+
+    .is-locked .medal {
+        color: var(--text-subtle);
+        background: var(--surface-3);
+        box-shadow: inset 0 0 0 2px var(--border-strong);
+        filter: grayscale(1);
+    }
+
+    .medal-lock {
+        @apply absolute -bottom-1 -right-1 grid place-items-center size-5 rounded-full text-[0.6rem] bg-surface text-subtle border border-line;
+    }
+
+    .achievement .progress {
+        @apply h-1.5 mt-auto;
+    }
+
+    .achievement .progress > span {
+        background: var(--text-subtle);
+    }
+
+    .achievement.is-next .progress > span {
+        background: var(--primary);
+    }
+
+    .tone-primary { --tone: var(--primary); --tone-soft: var(--primary-soft); }
+    .tone-success { --tone: var(--success); --tone-soft: var(--success-soft); }
+    .tone-warning { --tone: var(--warning); --tone-soft: var(--warning-soft); }
+    .tone-info { --tone: var(--info); --tone-soft: var(--info-soft); }
+
+    /* ------------------------------------------------------------------ */
+    /* Rank ladder                                                         */
+    /* ------------------------------------------------------------------ */
+
+    .rank {
+        @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm;
+    }
+
+    .rank-num {
+        @apply grid place-items-center size-8 shrink-0 rounded-full text-xs font-bold tabular-nums bg-surface-2 text-subtle;
+    }
+
+    .rank.is-past .rank-num {
+        background: var(--success-soft);
+        color: var(--success);
+    }
+
+    .rank.is-future {
+        @apply text-subtle;
+    }
+
+    .rank.is-current {
+        @apply bg-primary-soft;
+    }
+
+    .rank.is-current .rank-num {
+        background: var(--primary);
+        color: var(--primary-text);
+    }
+
+    .rank-name {
+        @apply font-serif text-base font-medium flex-1 min-w-0;
+    }
+
+    .rank.is-current .rank-name {
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    .xp-rule {
+        @apply flex items-center gap-3 py-2.5 text-sm;
+    }
+
+    .xp-rule + .xp-rule {
+        @apply border-t border-line;
+    }
+
+    .xp-amount {
+        @apply justify-center min-w-14 shrink-0 font-bold tabular-nums;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Mastery stars                                                       */
+    /* ------------------------------------------------------------------ */
+
+    .mastery-stars {
+        @apply inline-flex items-center gap-0.5 text-[0.7rem] align-middle shrink-0;
+        color: var(--surface-3);
+    }
+
+    .mastery-stars .is-on {
+        color: var(--warning);
+    }
+
+    .mastery-stars[data-mastery="3"] .is-on {
+        color: var(--primary);
+    }
+
+    [data-theme="dark"] .mastery-stars {
+        color: var(--border-strong);
+    }
+}
+
+@keyframes flame-flicker {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.06, 0.96) rotate(-3deg); }
+    50% { transform: scale(0.97, 1.05) rotate(2deg); }
+    75% { transform: scale(1.04, 0.98) rotate(-1deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hud-streak.is-lit svg,
+    .flame-big.is-lit svg {
+        animation: none;
+    }
+}

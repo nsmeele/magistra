@@ -278,8 +278,9 @@ class QuizService:
             "quiz_questions": quiz_questions,
             "quiz_list_ids": list_ids,  # Store multiple list IDs
             "quiz_list_names": list_names,  # Store list names for display
-            "quiz_source_language": source_lang,
-            "quiz_target_language": target_lang,
+            # Store names: the quiz data ends up in a JSON column.
+            "quiz_source_language": source_lang.name,
+            "quiz_target_language": target_lang.name,
             "quiz_index": 0,
             "quiz_score": 0,
             "quiz_total": len(quiz_questions),
@@ -586,6 +587,17 @@ class QuizService:
     def get_quiz_session_detail(self, session_id: int) -> Optional[QuizSession]:
         """Get detailed quiz session with all answers"""
         return QuizSession.query.filter_by(id=session_id).first()
+
+    def has_difficult_entries(
+        self, list_id: Optional[int] = None, min_attempts: int = 2
+    ) -> bool:
+        """Whether smart practice has anything to offer yet (same rule as below)."""
+        query = Entry.query.filter(
+            (Entry.correct_count + Entry.incorrect_count) >= min_attempts
+        )
+        if list_id:
+            query = query.filter_by(list_id=list_id)
+        return db.session.query(query.exists()).scalar()
 
     def get_difficult_entries(
         self, list_id: Optional[int] = None, min_attempts: int = 2, limit: int = 15

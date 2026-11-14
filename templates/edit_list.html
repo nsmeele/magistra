@@ -1,7 +1,65 @@
 {% extends "base.html" %}
 
-{% block title %}Lijst Bewerken - {{ word_list.name }}{% endblock %}
+{% block title %}Lijst bewerken - {{ word_list.name }}{% endblock %}
 
 {% block content %}
-    <h1>Joehoee</h1>
+<div class="max-w-2xl mx-auto lg:max-w-none lg:mx-0">
+    <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> {{ word_list.name }}</a>
+
+    <header class="mb-8">
+        <p class="eyebrow">Lijst bewerken</p>
+        <h1 class="page-title break-words">{{ word_list.name }}</h1>
+        <p class="page-subtitle flex flex-wrap items-center gap-2">
+            <span class="badge badge-primary">
+                {{ word_list.source_language.name }}
+                <i class="fa-solid fa-arrow-right-long text-[0.65rem]"></i>
+                {{ word_list.target_language.name }}
+            </span>
+            {% if word_list.category %}
+                <span class="badge"><i class="fa-solid fa-tag text-[0.65rem]"></i> {{ word_list.category.name }}</span>
+            {% endif %}
+        </p>
+    </header>
+
+    <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-8 lg:items-start xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-10">
+    <div class="empty" data-reveal="self">
+        <span class="empty-icon"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+        <span class="badge badge-warning">Binnenkort</span>
+        <h2 class="text-xl">Lijsten bewerken komt eraan</h2>
+        <p class="text-muted max-w-sm">Naam, talen en categorie aanpassen kan nog niet. Woorden toevoegen, bewerken en verwijderen kan wel vanuit de lijst zelf.</p>
+        <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-primary mt-2"><i class="fa-solid fa-arrow-left"></i> Terug naar de lijst</a>
+    </div>
+
+    {#- Desktop side panel: what this list contains and what you can do with it now. -#}
+    {% set n = word_list.entries|length %}
+    <aside class="form-aside hidden lg:flex" aria-labelledby="list-facts-title">
+        <h2 id="list-facts-title" class="form-aside-title">Over deze lijst</h2>
+        <div class="form-facts">
+            <div class="form-fact">
+                <span class="form-fact-value">{{ n }}</span>
+                <span class="form-fact-label">{{ 'woord' if n == 1 else 'woorden' }}</span>
+            </div>
+            <div class="form-fact">
+                <span class="form-fact-value">{{ word_list.quiz_sessions|length }}</span>
+                <span class="form-fact-label">{{ 'quiz' if word_list.quiz_sessions|length == 1 else 'quizzen' }}</span>
+            </div>
+        </div>
+        {% if word_list.created_at %}
+            {% set MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] %}
+            <p>Aangemaakt op {{ word_list.created_at.day }} {{ MONTHS[word_list.created_at.month - 1] }} {{ word_list.created_at.year }}.</p>
+        {% endif %}
+        <nav class="form-links" aria-label="Wat kan wel">
+            <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}"><i class="fa-solid fa-plus"></i> Woorden toevoegen <i class="fa-solid fa-chevron-right"></i></a>
+            {% if n %}
+                <a href="{{ url_for('main.quiz_start', list_id=word_list.id) }}"><i class="fa-solid fa-play"></i> Start een quiz <i class="fa-solid fa-chevron-right"></i></a>
+                {% if smart_practice_ready(word_list.id) %}
+                    <a href="{{ url_for('main.smart_practice_list', list_id=word_list.id) }}"><i class="fa-solid fa-brain"></i> Smart Practice <i class="fa-solid fa-chevron-right"></i></a>
+                {% else %}
+                    <span class="is-disabled" aria-disabled="true" title="Beschikbaar zodra je woorden minstens twee keer hebt geoefend"><i class="fa-solid fa-brain"></i> Smart Practice <i class="fa-solid fa-lock"></i></span>
+                {% endif %}
+            {% endif %}
+        </nav>
+    </aside>
+    </div>
+</div>
 {% endblock %}

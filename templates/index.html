@@ -1,59 +1,154 @@
 {% extends "base.html" %}
+{% from "_game.html" import daily_card, mastery_stars %}
 
-{% block title %}Mijn Lijsten - Magistra{% endblock %}
+{% block title %}Mijn lijsten - Magistra{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h2>Mijn Woordenlijsten</h2>
-    <div class="header-actions">
+{% if lists %}<div class="lg:hidden">{{ daily_card(game_profile(), smart_practice_ready()) }}</div>{% endif %}
+<header class="page-head lg:mb-6">
+    <div>
+        <p class="eyebrow">Jouw bibliotheek</p>
+        <h1 class="page-title">Mijn woordenlijsten</h1>
+        <p class="page-subtitle">
+            {% if lists %}
+                {{ lists|length }} lijst{% if lists|length != 1 %}en{% endif %}{% if selected_language %} met {{ selected_language.name }}{% endif %}. Kies er een om te oefenen of aan te vullen.
+            {% else %}
+                Verzamel woorden en zinnen en oefen ze tot ze vanzelf gaan.
+            {% endif %}
+        </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
         {% if lists|length > 1 %}
             <a href="{{ url_for('main.mixed_quiz') }}" class="btn btn-primary">
-                <i class="fa-solid fa-shuffle"></i> Gemengde Quiz
+                <i class="fa-solid fa-shuffle"></i> Gemengde quiz
             </a>
+        {% endif %}
+        {% if lists or selected_language %}
+        <a href="{{ url_for('main.new_list') }}" class="btn btn-secondary{% if lists %} lg:hidden{% endif %}">
+            <i class="fa-solid fa-plus"></i> Nieuwe lijst
+        </a>
         {% endif %}
     </div>
-</div>
+</header>
 
+<div class="lists-toolbar">
 {% if languages %}
-<div class="filter-section">
-    <form method="get" action="{{ url_for('main.index') }}" class="filter-form">
-        <label for="language_id">Filter op taal:</label>
-        <select name="language_id" id="language_id" onchange="this.form.submit()">
-            <option value="0">Alle talen</option>
-            {% for lang in languages %}
-                <option value="{{ lang.id }}" {% if selected_language and selected_language.id == lang.id %}selected{% endif %}>{{ lang.name }}</option>
-            {% endfor %}
-        </select>
-        {% if selected_language %}
-            <a href="{{ url_for('main.index') }}" class="btn btn-secondary btn-sm">
-                <i class="fa-solid fa-xmark"></i> Filter wissen
+<nav class="mb-4 lg:mb-0 lg:min-w-0" aria-label="Filter op taal">
+    <div class="chips">
+        <a href="{{ url_for('main.index') }}" class="chip"{% if not selected_language %} aria-current="true"{% endif %}>
+            <i class="fa-solid fa-earth-europe"></i> Alle talen
+        </a>
+        {% for lang in languages %}
+            <a href="{{ url_for('main.index', language_id=lang.id) }}" class="chip"{% if selected_language and selected_language.id == lang.id %} aria-current="true"{% endif %}>
+                {{ lang.name }}
             </a>
-        {% endif %}
-    </form>
-</div>
-{% endif %}
-
-{% if lists %}
-    <div class="lists-grid">
-        {% for list in lists %}
-            <div class="list-card">
-                <h3><a href="{{ url_for('main.list_detail', list_id=list.id) }}">{{ list.name }}</a></h3>
-                <p class="languages">{{ list.source_language.name }} → {{ list.target_language.name }}</p>
-                <p class="word-count">{{ list.entries|length }} item{% if list.entries|length != 1 %}s{% endif %}</p>
-                <div class="card-actions">
-                    <a href="{{ url_for('main.list_detail', list_id=list.id) }}" class="btn btn-secondary"><i class="fa-solid fa-eye"></i> Bekijken</a>
-                    {% if list.entries %}
-                        <a href="{{ url_for('main.quiz', list_id=list.id) }}" class="btn btn-primary"><i class="fa-solid fa-gamepad"></i> Oefenen</a>
-                    {% endif %}
-                </div>
-            </div>
         {% endfor %}
     </div>
+</nav>
+{% endif %}
+
+{% if lists and lists|length > 3 %}
+    <div class="search mb-6 max-w-md lg:mb-0 lg:w-72 lg:shrink-0">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" class="input" placeholder="Zoek een lijst..." aria-label="Zoek in lijsten" data-search="list-grid" autocomplete="off">
+    </div>
+{% endif %}
+</div>
+
+{% if lists %}
+    <div class="grid-cards list-grid" id="list-grid" data-reveal>
+        {% for list in lists %}
+            {% set ns = namespace(correct=0, total=0) %}
+            {% for e in list.entries %}
+                {% set ns.correct = ns.correct + (e.correct_count or 0) %}
+                {% set ns.total = ns.total + (e.correct_count or 0) + (e.incorrect_count or 0) %}
+            {% endfor %}
+            {% set count = list.entries|length %}
+            <article class="card list-card group" data-search-text="{{ list.name }} {{ list.source_language.name }} {{ list.target_language.name }}{% if list.category %} {{ list.category.name }}{% endif %}">
+                <div class="flex items-center justify-between gap-3">
+                    <span class="badge">
+                        {{ list.source_language.name }}
+                        <i class="fa-solid fa-arrow-right-long text-[0.65rem] opacity-70"></i>
+                        {{ list.target_language.name }}
+                    </span>
+                    {% if list.category %}
+                        <span class="text-xs text-subtle truncate">{{ list.category.name }}</span>
+                    {% endif %}
+                </div>
+
+                <h2 class="mt-4 text-2xl leading-snug break-words lg:mt-3 lg:text-lg lg:leading-snug">
+                    <a href="{{ url_for('main.list_detail', list_id=list.id) }}" class="list-card-link">{{ list.name }}</a>
+                </h2>
+
+                <p class="mt-1 text-sm text-muted tabular-nums lg:hidden">
+                    {{ count }} item{% if count != 1 %}s{% endif %}
+                </p>
+
+                <div class="mt-auto pt-5 lg:pt-3">
+                    {% if ns.total > 0 %}
+                        {% set pct = (ns.correct / ns.total * 100)|round|int %}
+                        <div class="flex items-center justify-between text-xs text-muted mb-1.5 lg:hidden">
+                            <span>Score</span>
+                            <span class="tabular-nums font-semibold text-ink">{{ pct }}%</span>
+                        </div>
+                        <div class="progress lg:h-1" role="progressbar" aria-label="Score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pct }}">
+                            <span style="width: {{ pct }}%"></span>
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-4 flex items-center justify-between gap-3 lg:mt-3">
+                        <span class="text-sm font-medium text-subtle group-hover:text-primary transition-colors lg:hidden" aria-hidden="true">
+                            Bekijken <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </span>
+                        <span class="hidden lg:inline text-sm text-muted tabular-nums whitespace-nowrap">
+                            {{ count }} item{% if count != 1 %}s{% endif %}{% if ns.total > 0 %} · <span class="font-semibold text-ink">{{ (ns.correct / ns.total * 100)|round|int }}%</span>{% endif %}
+                        </span>
+                        {% if list.entries %}
+                            <a href="{{ url_for('main.quiz', list_id=list.id) }}" class="btn btn-primary btn-sm relative z-10 lg:max-xl:px-3" title="Oefenen">
+                                <i class="fa-solid fa-play"></i> <span class="lg:max-xl:sr-only">Oefenen</span>
+                            </a>
+                        {% else %}
+                            <span class="badge badge-warning">Nog leeg</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+
+    <div class="empty mt-4" data-search-empty="list-grid" hidden>
+        <span class="empty-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <h2 class="text-xl">Geen lijst gevonden</h2>
+        <p class="text-muted max-w-sm">Probeer een andere zoekterm, of druk op <span class="kbd">Esc</span> om te wissen.</p>
+    </div>
 {% else %}
-    {% if selected_language %}
-        <p class="empty-state">Geen lijsten gevonden voor {{ selected_language.name }}. <a href="{{ url_for('main.index') }}">Bekijk alle lijsten</a> of <a href="{{ url_for('main.new_list') }}">maak een nieuwe lijst aan</a>.</p>
-    {% else %}
-        <p class="empty-state">Je hebt nog geen woordenlijsten. <a href="{{ url_for('main.new_list') }}">Maak je eerste lijst aan!</a></p>
-    {% endif %}
+    <div class="empty" data-reveal="self">
+        {% if selected_language %}
+            <span class="empty-icon"><i class="fa-solid fa-filter-circle-xmark"></i></span>
+            <h2 class="text-xl">Geen lijsten met {{ selected_language.name }}</h2>
+            <p class="text-muted max-w-sm">Er is nog geen lijst in deze taal. Bekijk al je lijsten of begin een nieuwe.</p>
+            <div class="flex flex-wrap justify-center gap-2 mt-2">
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Alle lijsten</a>
+                <a href="{{ url_for('main.new_list') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Nieuwe lijst</a>
+            </div>
+        {% else %}
+            <span class="empty-icon"><i class="fa-solid fa-feather-pointed"></i></span>
+            <h2 class="text-xl">Nog geen woordenlijsten</h2>
+            <p class="text-muted max-w-md">Begin meteen met een paar kant-en-klare lijsten, of maak je eigen lijst aan en voeg zelf woorden toe.</p>
+            <div class="mt-3 flex w-full max-w-sm flex-col items-stretch gap-3 sm:max-w-none sm:w-auto sm:flex-row sm:items-center sm:justify-center">
+                <form method="POST" action="{{ url_for('main.import_samples') }}" data-import-samples class="flex">
+                    {{ import_form.hidden_tag() }}
+                    <button type="submit" class="btn btn-primary btn-lg w-full">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Voorbeeldlijsten importeren
+                    </button>
+                </form>
+                <a href="{{ url_for('main.new_list') }}" class="btn btn-secondary btn-lg"><i class="fa-solid fa-plus"></i> Zelf een lijst maken</a>
+            </div>
+            <p class="help max-w-xs sm:max-w-md mt-1">
+                <i class="fa-solid fa-circle-info text-subtle"></i>
+                Grieks alfabet (letters en combinaties) en Latijnse werkwoorden in vier tijden.
+            </p>
+        {% endif %}
+    </div>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,78 @@
+{#- Game layer macros. Import with: {% from "_game.html" import daily_card, mastery_stars %} -#}
+
+{#- Three small stars filled by an entry's mastery (0-3). -#}
+{%- macro mastery_stars(entry) -%}
+    {%- set m = entry|mastery -%}
+    <span class="mastery-stars" data-mastery="{{ m }}" role="img" aria-label="Beheersing: {{ m|mastery_label }}" title="{{ m|mastery_label }}">
+        {%- for i in range(3) %}<i class="fa-solid fa-star{% if i < m %} is-on{% endif %}"></i>{% endfor -%}
+    </span>
+{%- endmacro -%}
+
+{#- Colour tone for an achievement medal, by its key. -#}
+{%- macro achievement_tone(key) -%}
+    {%- if key.startswith('correct') -%}tone-success
+    {%- elif key.startswith('perfect') or key.startswith('level') -%}tone-warning
+    {%- elif key.startswith('streak') or key == 'mixed' -%}tone-primary
+    {%- else -%}tone-info
+    {%- endif -%}
+{%- endmacro -%}
+
+{#- Dashboard card: today's goal ring, streak, level bar and a CTA. -#}
+{%- macro daily_card(gp, smart_ready=False) -%}
+{%- if gp %}
+<section class="card card-pad mb-8 daily-card" aria-label="Je dag in Magistra" data-daily-card{% if gp.daily_done %} data-daily-done{% endif %}>
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-7">
+        <div class="flex items-center gap-4 sm:contents">
+            <div class="score-ring goal-ring shrink-0 mx-0{% if gp.daily_done %} is-done{% endif %}" style="--value: {{ gp.daily_pct }}; --size: 6.5rem;"
+                 data-game-ring="{{ gp.daily_pct }}" role="img" aria-label="Dagdoel: {{ gp.today_correct }} van {{ gp.daily_goal }} goede antwoorden">
+                <div class="text-center leading-none">
+                    {% if gp.daily_done %}
+                        <span class="text-success text-2xl"><i class="fa-solid fa-check"></i></span>
+                    {% else %}
+                        <span class="font-serif text-2xl font-semibold tabular-nums">{{ gp.today_correct }}</span><span class="text-xs text-subtle">/{{ gp.daily_goal }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="min-w-0 sm:hidden">
+                <p class="eyebrow mb-1">Vandaag</p>
+                <p class="font-serif text-lg font-semibold leading-snug">
+                    {% if gp.daily_done %}Dagdoel gehaald!{% else %}Nog {{ gp.daily_goal - gp.today_correct }} goed voor je dagdoel{% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="flex-1 min-w-0 flex flex-col gap-4">
+            <div class="hidden sm:block">
+                <p class="eyebrow mb-1">Vandaag</p>
+                <h2 class="text-xl">
+                    {% if gp.daily_done %}Dagdoel gehaald, optime!{% else %}Nog {{ gp.daily_goal - gp.today_correct }} goede antwoorden voor je dagdoel{% endif %}
+                </h2>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                <span class="inline-flex items-center gap-2 {% if gp.practiced_today %}text-ink{% else %}text-muted{% endif %}">
+                    <span class="{% if gp.practiced_today %}text-warning{% else %}text-subtle{% endif %}"><i class="fa-solid fa-fire"></i></span>
+                    <span><strong class="tabular-nums">{{ gp.streak }}</strong> {{ 'dag' if gp.streak == 1 else 'dagen' }} streak{% if not gp.practiced_today and gp.streak %} · oefen vandaag om hem te houden{% endif %}</span>
+                </span>
+            </div>
+
+            <a href="{{ url_for('main.profile') }}" class="group flex flex-col gap-1.5 no-underline text-ink" aria-label="Level {{ gp.level }} {{ gp.title }}, {{ gp.xp_into_level }} van {{ gp.xp_for_level }} XP. Naar je profiel">
+                <span class="flex items-baseline justify-between gap-3 text-sm">
+                    <span><span class="font-semibold">Lv {{ gp.level }}</span> <span class="font-serif italic text-muted">{{ gp.title }}</span></span>
+                    <span class="text-xs text-subtle tabular-nums group-hover:text-muted">{{ gp.xp_into_level }}/{{ gp.xp_for_level }} XP</span>
+                </span>
+                <span class="progress" aria-hidden="true"><span style="width: {{ gp.level_pct }}%"></span></span>
+            </a>
+        </div>
+
+        <div class="sm:self-center">
+            {% if gp.quizzes > 0 and smart_ready %}
+                <a href="{{ url_for('main.smart_practice') }}" class="btn btn-primary w-full sm:w-auto"><i class="fa-solid fa-play"></i> Ga verder met oefenen</a>
+            {% else %}
+                <a href="{{ url_for('main.mixed_quiz') }}" class="btn btn-primary w-full sm:w-auto"><i class="fa-solid fa-play"></i> Start je eerste quiz</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{%- endif %}
+{%- endmacro -%}

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% from "_game.html" import achievement_tone %}
+{% block title %}Profiel - Magistra{% endblock %}
+{% block content %}
+{% set p = profile %}
+{% set titles = ['Discipulus', 'Tiro', 'Lector', 'Scriba', 'Grammaticus', 'Orator', 'Rhetor', 'Philosophus', 'Doctor', 'Magistra'] %}
+{% set xp_to_go = p.xp_for_level - p.xp_into_level %}
+{% set next = p.next_achievement %}
+
+<div class="flex flex-col gap-8 sm:gap-10" data-profile>
+
+    {# ---------------------------------------------------------------- #}
+    {# Hero: level medallion                                             #}
+    {# ---------------------------------------------------------------- #}
+    {#- Wide desktop: hero + stat tiles on the left, today/streak stacked on the right. -#}
+    <div class="flex flex-col gap-8 sm:gap-10 xl:grid xl:grid-cols-[minmax(0,1fr)_21rem] xl:gap-5 2xl:grid-cols-[minmax(0,1fr)_23rem]">
+    <section class="card card-pad game-hero xl:col-start-1 xl:row-start-1" aria-labelledby="profile-title">
+        <div class="relative flex flex-col items-center text-center gap-5 sm:flex-row sm:text-left sm:gap-8">
+            <div class="score-ring medallion-ring mx-0 shrink-0" style="--value: {{ p.level_pct }};" data-game-ring="{{ p.level_pct }}"
+                 role="img" aria-label="Level {{ p.level }}, {{ p.level_pct }} procent naar het volgende level">
+                <div class="flex flex-col items-center leading-none">
+                    <span class="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-subtle mb-1">Level</span>
+                    <span class="medallion-level" data-game-count="{{ p.level }}">{{ p.level }}</span>
+                </div>
+            </div>
+
+            <div class="flex-1 min-w-0 w-full">
+                <p class="eyebrow">Jouw rang</p>
+                <h1 id="profile-title" class="page-title italic">{{ p.title }}</h1>
+                <p class="page-subtitle">
+                    Nog <strong class="text-ink tabular-nums">{{ xp_to_go }} XP</strong> tot
+                    {% if p.next_title != p.title %}<span class="font-serif italic text-ink">{{ p.next_title }}</span>{% else %}level {{ p.level + 1 }}{% endif %}
+                </p>
+                <div class="mt-4 flex flex-col gap-2">
+                    <div class="progress h-2.5" role="progressbar" aria-label="XP in dit level" aria-valuemin="0" aria-valuemax="{{ p.xp_for_level }}" aria-valuenow="{{ p.xp_into_level }}">
+                        <span style="width: {{ p.level_pct }}%"></span>
+                    </div>
+                    <div class="flex justify-between text-xs text-subtle tabular-nums">
+                        <span>{{ p.xp_into_level }} / {{ p.xp_for_level }} XP</span>
+                        <span><span data-game-count="{{ p.xp }}">{{ p.xp }}</span> XP totaal</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ---------------------------------------------------------------- #}
+    {# Today + streak                                                    #}
+    {# ---------------------------------------------------------------- #}
+    <section aria-label="Vandaag en statistieken" class="flex flex-col gap-4 xl:contents">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-1 xl:col-start-2 xl:row-start-1 xl:row-span-2" data-reveal>
+            <div class="game-tile flex-row items-center gap-5" data-daily-goal{% if p.daily_done %} data-daily-done{% endif %}>
+                <div class="score-ring goal-ring mx-0 shrink-0{% if p.daily_done %} is-done{% endif %}" style="--value: {{ p.daily_pct }};" data-game-ring="{{ p.daily_pct }}"
+                     role="img" aria-label="Dagdoel: {{ p.today_correct }} van {{ p.daily_goal }} goede antwoorden">
+                    <div class="text-center leading-none">
+                        {% if p.daily_done %}
+                            <span class="text-success text-3xl"><i class="fa-solid fa-check"></i></span>
+                        {% else %}
+                            <span class="font-serif text-3xl font-semibold tabular-nums">{{ p.today_correct }}</span><span class="text-sm text-subtle">/{{ p.daily_goal }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="min-w-0">
+                    <p class="eyebrow mb-1">Dagdoel</p>
+                    {% if p.daily_done %}
+                        <p class="font-serif text-xl font-semibold">Gehaald, optime!</p>
+                        <p class="text-sm text-muted mt-1">{{ p.today_correct }} goede antwoorden vandaag. Morgen weer?</p>
+                    {% else %}
+                        <p class="font-serif text-xl font-semibold">Nog {{ p.daily_goal - p.today_correct }} te gaan</p>
+                        <p class="text-sm text-muted mt-1">{{ p.daily_goal }} goede antwoorden per dag houdt je scherp.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="game-tile flex-row items-center gap-5">
+                <span class="flame-big{% if p.practiced_today %} is-lit{% endif %}" aria-hidden="true"><i class="fa-solid fa-fire"></i></span>
+                <div class="min-w-0">
+                    <p class="eyebrow mb-1">Streak</p>
+                    <p class="font-serif text-xl font-semibold"><span class="tabular-nums" data-game-count="{{ p.streak }}">{{ p.streak }}</span> {{ 'dag' if p.streak == 1 else 'dagen' }} op rij</p>
+                    <p class="text-sm text-muted mt-1">
+                        {% if p.practiced_today %}Vandaag al geoefend.{% elif p.streak %}Oefen vandaag om je streak te houden.{% else %}Beantwoord vandaag een vraag om te beginnen.{% endif %}
+                        Langste: <strong class="text-ink tabular-nums">{{ p.longest_streak }}</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 sm:gap-4 xl:col-start-1 xl:row-start-2" data-reveal>
+            <div class="game-tile tone-success">
+                <span class="game-tile-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                <span class="stat-value" data-game-count="{{ p.correct }}">{{ p.correct }}</span>
+                <span class="stat-label">Goed<span class="hidden sm:inline"> beantwoord</span></span>
+            </div>
+            <div class="game-tile tone-info">
+                <span class="game-tile-icon" aria-hidden="true"><i class="fa-solid fa-list-check"></i></span>
+                <span class="stat-value" data-game-count="{{ p.quizzes }}">{{ p.quizzes }}</span>
+                <span class="stat-label">Quizzen</span>
+            </div>
+            <div class="game-tile tone-primary">
+                <span class="game-tile-icon" aria-hidden="true"><i class="fa-solid fa-brain"></i></span>
+                <span class="stat-value" data-game-count="{{ p.mastered }}">{{ p.mastered }}</span>
+                <span class="stat-label">Beheerst</span>
+            </div>
+        </div>
+    </section>
+    </div>
+
+    {# ---------------------------------------------------------------- #}
+    {# Achievements                                                      #}
+    {# ---------------------------------------------------------------- #}
+    <section aria-labelledby="achievements-title">
+        <div class="flex items-baseline justify-between gap-4 mb-4">
+            <h2 id="achievements-title" class="section-title mb-0"><i class="fa-solid fa-medal text-warning"></i> Prestaties</h2>
+            <span class="text-sm text-muted tabular-nums">{{ p.unlocked|length }} van {{ p.achievements|length }}</span>
+        </div>
+        <ul class="grid grid-cols-2 gap-3 pt-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5" data-achievements>
+            {% for a in p.achievements %}
+                {% set is_next = next and a.key == next.key %}
+                <li class="achievement {{ achievement_tone(a.key) }}{% if not a.unlocked %} is-locked{% endif %}{% if is_next %} is-next{% endif %}"
+                    {% if a.unlocked %}data-unlocked{% endif %}>
+                    {% if is_next %}<span class="achievement-bijna badge badge-primary">Bijna!</span>{% endif %}
+                    <span class="medal" aria-hidden="true">
+                        <i class="fa-solid fa-{{ a.icon }}"></i>
+                        {% if not a.unlocked %}<span class="medal-lock"><i class="fa-solid fa-lock"></i></span>{% endif %}
+                    </span>
+                    <span class="font-serif font-semibold leading-tight{% if not a.unlocked %} text-muted{% endif %}">{{ a.title }}</span>
+                    <span class="text-xs text-muted leading-snug">{{ a.description }}</span>
+                    {% if a.unlocked %}
+                        <span class="sr-only">Behaald</span>
+                        <span class="mt-auto badge badge-success py-0.5" aria-hidden="true"><i class="fa-solid fa-check"></i> Behaald</span>
+                    {% else %}
+                        <span class="w-full mt-auto flex flex-col gap-1">
+                            <span class="progress" role="progressbar" aria-label="Voortgang {{ a.title }}" aria-valuemin="0" aria-valuemax="{{ a.target }}" aria-valuenow="{{ [a.current, a.target]|min }}"><span style="width: {{ a.progress_pct }}%"></span></span>
+                            <span class="text-[0.7rem] text-subtle tabular-nums">{{ [a.current, a.target]|min }} / {{ a.target }}</span>
+                        </span>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    {# ---------------------------------------------------------------- #}
+    {# How XP works + rank ladder                                        #}
+    {# ---------------------------------------------------------------- #}
+    <div class="grid gap-4 lg:grid-cols-2 lg:items-start">
+        <section class="card card-pad" aria-labelledby="xp-title">
+            <h2 id="xp-title" class="section-title"><i class="fa-solid fa-circle-question text-subtle"></i> Hoe verdien je XP?</h2>
+            <ul class="flex flex-col">
+                <li class="xp-rule"><span class="xp-amount badge badge-success">+{{ XP_CORRECT }}</span><span>per goed antwoord</span></li>
+                <li class="xp-rule"><span class="xp-amount badge">+1</span><span>per fout antwoord: proberen telt ook</span></li>
+                <li class="xp-rule"><span class="xp-amount badge badge-primary">+25</span><span>voor elke afgeronde quiz</span></li>
+                <li class="xp-rule"><span class="xp-amount badge badge-warning">+50</span><span>bonus voor een foutloze quiz van minstens 5 vragen</span></li>
+            </ul>
+            <div class="mt-4 rounded-xl bg-surface-2 p-4 text-sm text-muted flex flex-col gap-2">
+                <p><i class="fa-solid fa-bullseye text-warning mr-1.5"></i> <strong class="text-ink">Dagdoel:</strong> {{ p.daily_goal }} goede antwoorden per dag.</p>
+                <p><i class="fa-solid fa-fire text-warning mr-1.5"></i> <strong class="text-ink">Streak:</strong> beantwoord elke dag minstens één vraag.</p>
+                <p><i class="fa-solid fa-star text-primary mr-1.5"></i> <strong class="text-ink">Beheerst:</strong> een woord minstens 5 keer goed, met 85% of meer goed.</p>
+            </div>
+        </section>
+
+        <section class="card card-pad" aria-labelledby="ranks-title">
+            <h2 id="ranks-title" class="section-title"><i class="fa-solid fa-landmark text-subtle"></i> Rangen</h2>
+            <ol class="flex flex-col gap-0.5">
+                {% for t in titles %}
+                    {% set lvl = loop.index %}
+                    {% set is_current = t == p.title %}
+                    <li class="rank {% if is_current %}is-current{% elif lvl < p.level %}is-past{% else %}is-future{% endif %}"{% if is_current %} aria-current="step"{% endif %}>
+                        <span class="rank-num">{% if lvl < p.level and not is_current %}<i class="fa-solid fa-check"></i><span class="sr-only">Behaald: </span>{% else %}{{ lvl }}{% endif %}</span>
+                        <span class="rank-name">{{ t }}</span>
+                        {% if is_current %}<span class="badge badge-primary">Jij</span>{% endif %}
+                        <span class="text-xs tabular-nums text-subtle">{{ '{:,}'.format(50 * lvl * (lvl - 1)).replace(',', '.') }} XP</span>
+                    </li>
+                {% endfor %}
+            </ol>
+        </section>
+    </div>
+</div>
+{% endblock %}

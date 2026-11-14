@@ -9,12 +9,10 @@ class NewListForm(FlaskForm):
     """Form voor het aanmaken van een nieuwe lijst"""
 
     name = StringField("Naam", validators=[DataRequired(), Length(min=1, max=100)])
-    source_language_id = SelectField(
-        "Brontaal", coerce=int, validators=[DataRequired()]
-    )
-    target_language_id = SelectField(
-        "Doeltaal", coerce=int, validators=[DataRequired()]
-    )
+    # No DataRequired: it rejects 0 before the Dutch messages in
+    # validate_source_language_id / validate_target_language_id can run.
+    source_language_id = SelectField("Brontaal", coerce=int)
+    target_language_id = SelectField("Doeltaal", coerce=int)
     category_id = SelectField("Categorie", coerce=int)
     submit = SubmitField("Lijst Aanmaken")
 
@@ -108,6 +106,12 @@ class DeleteForm(FlaskForm):
     """Form voor het verwijderen (alleen CSRF token)"""
 
     submit = SubmitField("Verwijderen")
+
+
+class ImportSamplesForm(FlaskForm):
+    """Form voor het importeren van de voorbeeldlijsten (alleen CSRF token)"""
+
+    submit = SubmitField("Voorbeeldlijsten importeren")
 
 
 class QuizAnswerForm(FlaskForm):

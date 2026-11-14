@@ -1,50 +1,41 @@
 {% extends "base.html" %}
+{% import "_quiz_macros.html" as q with context %}
 
-{% block title %}Quiz Voltooid - Magistra{% endblock %}
+{% block title %}Quiz voltooid - Magistra{% endblock %}
 
 {% block content %}
-<div class="quiz-complete">
-    <div class="complete-icon">
-        <i class="fa-solid fa-trophy"></i>
-    </div>
+{% set has_rewards = rewards and rewards.profile %}
+<div class="max-w-xl mx-auto flex flex-col gap-8{% if has_rewards %} quiz-result-layout lg:grid lg:max-w-5xl lg:grid-cols-2 lg:grid-rows-[auto_auto_1fr] lg:gap-x-8 lg:gap-y-6 lg:items-start lg:pt-4{% endif %}" data-quiz-complete>
+    <header class="text-center{% if has_rewards %} lg:text-left{% endif %}">
+        <p class="eyebrow">Gemengde quiz voltooid</p>
+    </header>
 
-    <h2>Quiz Voltooid!</h2>
+    <section class="card card-pad flex flex-col gap-6">
+        {{ q.result_summary(score, total, rewards.mistakes if rewards else 0) }}
 
-    <div class="quiz-lists">
-        <p><strong>Geoefende lijsten:</strong></p>
-        <ul>
-            {% for list_name in list_names %}
-                <li>{{ list_name }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-
-    <div class="score-card">
-        <p class="score-label">Jouw Score:</p>
-        <p class="score-value">{{ score }} / {{ total }}</p>
-        {% set percentage = (score / total * 100) | round | int if total > 0 else 0 %}
-        <p class="score-percentage">{{ percentage }}%</p>
-
-        {% if percentage >= 90 %}
-            <p class="score-message excellent">Uitstekend! Je beheerst deze woorden heel goed!</p>
-        {% elif percentage >= 70 %}
-            <p class="score-message good">Goed gedaan! Blijf oefenen om nog beter te worden.</p>
-        {% elif percentage >= 50 %}
-            <p class="score-message okay">Niet slecht! Blijf oefenen om je score te verbeteren.</p>
-        {% else %}
-            <p class="score-message needs-work">Blijf oefenen! Je kunt het!</p>
+        {% if list_names %}
+            <div class="border-t border-line pt-5">
+                <p class="text-sm font-semibold text-muted mb-3 text-center">Geoefende lijsten</p>
+                <ul class="flex flex-wrap justify-center gap-2">
+                    {% for list_name in list_names %}
+                        <li class="badge max-w-full"><i class="fa-solid fa-layer-group text-[0.65rem]"></i> <span class="truncate">{{ list_name }}</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
         {% endif %}
-    </div>
+    </section>
 
-    <div class="quiz-actions">
-        <a href="{{ url_for('main.mixed_quiz') }}" class="btn btn-primary">
-            <i class="fa-solid fa-arrow-rotate-right"></i> Nieuwe Gemengde Quiz
+    {{ q.rewards_panel(rewards|default(none)) }}
+
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" data-reveal>
+        <a href="{{ url_for('main.mixed_quiz') }}" class="btn btn-primary btn-lg sm:col-span-2">
+            <i class="fa-solid fa-arrow-rotate-right"></i> Nieuwe gemengde quiz
         </a>
         <a href="{{ url_for('main.quiz_history') }}" class="btn btn-secondary">
-            <i class="fa-solid fa-clock-rotate-left"></i> Bekijk Geschiedenis
+            <i class="fa-solid fa-clock-rotate-left"></i> Bekijk geschiedenis
         </a>
         <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
-            <i class="fa-solid fa-house"></i> Terug naar Home
+            <i class="fa-solid fa-house"></i> Naar overzicht
         </a>
     </div>
 </div>

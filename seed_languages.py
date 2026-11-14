@@ -5,18 +5,14 @@ Seed script for languages (Dutch, English, Latin, Greek)
 
 from app import create_app, db
 from app.models import Language
+from app.seed_data import LANGUAGES
 
 
 def seed_languages():
     app = create_app()
 
     with app.app_context():
-        languages_data = [
-            {"name": "Dutch", "code": "nl"},
-            {"name": "English", "code": "en"},
-            {"name": "Latin", "code": "la"},
-            {"name": "Greek", "code": "el"},
-        ]
+        languages_data = LANGUAGES
 
         for lang_data in languages_data:
             existing = Language.query.filter_by(code=lang_data["code"]).first()

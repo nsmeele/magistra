@@ -36,6 +36,40 @@ def create_app(config_class=Config):
 
         return EntryType.get_label(entry_type_value)
 
+    # Game layer: mastery filters and a lazily computed player profile
+    from app import game
+
+    app.add_template_filter(game.mastery, "mastery")
+    app.add_template_filter(game.mastery_label, "mastery_label")
+
+    @app.context_processor
+    def game_helpers():
+        from flask import g
+
+        def game_profile():
+            if "game_profile" not in g:
+                try:
+                    g.game_profile = game.build_profile()
+                except Exception as e:  # never break page rendering
+                    print(f"Error building game profile: {e}")
+                    g.game_profile = None
+            return g.game_profile
+
+        def smart_practice_ready(list_id=None):
+            """Smart practice needs words that were practised at least twice."""
+            from app.services import QuizService
+
+            cache = g.setdefault("smart_practice_ready", {})
+            if list_id not in cache:
+                cache[list_id] = QuizService().has_difficult_entries(list_id=list_id)
+            return cache[list_id]
+
+        return dict(
+            game_profile=game_profile,
+            smart_practice_ready=smart_practice_ready,
+            XP_CORRECT=game.XP_CORRECT,
+        )
+
     # Vite manifest helpers
     @app.context_processor
     def vite_helpers():

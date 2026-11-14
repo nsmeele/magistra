@@ -1,37 +1,30 @@
 {% extends "base.html" %}
+{% import "_quiz_macros.html" as q with context %}
 
-{% block title %}Oefening - {{ word_list.name }}{% endblock %}
+{% block title %}Oefening - {{ word_list.name }} - Magistra{% endblock %}
+
+{# Answer feedback is rendered inline above the question; other messages stay toasts. #}
+{% block flashes %}{{ q.flash_toasts() }}{% endblock %}
 
 {% block content %}
-<div class="quiz-container">
-    <div class="quiz-header">
-        <h2>{{ word_list.name }}</h2>
-        <p class="progress">Vraag {{ progress }}</p>
-    </div>
+{% if direction == 'forward' %}
+    {% set ask_lang, answer_lang, word = word_list.source_language.name, word_list.target_language.name, entry.source_word %}
+{% else %}
+    {% set ask_lang, answer_lang, word = word_list.target_language.name, word_list.source_language.name, entry.target_word %}
+{% endif %}
+<div class="quiz quiz-layout" data-quiz-question>
+    {{ q.quiz_header('Oefening', word_list.name, url_for('main.list_detail', list_id=word_list.id)) }}
 
-    <div class="quiz-question">
-        {% if direction == 'forward' %}
-            <p class="question-label">Wat is de {{ word_list.target_language.name }} vertaling van:</p>
-            <h3 class="source-word">{{ entry.source_word }}</h3>
-        {% else %}
-            <p class="question-label">Wat is de {{ word_list.source_language.name }} vertaling van:</p>
-            <h3 class="source-word">{{ entry.target_word }}</h3>
-        {% endif %}
-    </div>
+    {{ q.quiz_aside(progress, combo|default(0)) }}
 
-    <form method="POST" action="{{ url_for('main.quiz_answer', list_id=word_list.id) }}" class="quiz-form">
-        {{ form.hidden_tag() }}
-        <input type="hidden" name="entry_id" value="{{ entry.id }}">
-        <input type="hidden" name="direction" value="{{ direction }}">
-        <div class="form-group">
-            {{ form.answer(class="form-control", autofocus=True, autocomplete="off", placeholder="Type je antwoord...") }}
-            {% if form.answer.errors %}
-                <span class="error">{{ form.answer.errors[0] }}</span>
-            {% endif %}
-        </div>
-        {{ form.submit(class="btn btn-primary btn-large") }}
-    </form>
+    <section class="quiz-card py-8 sm:py-14 lg:py-16" data-quiz-card aria-labelledby="quiz-word">
+        <p class="text-sm text-muted mb-4">
+            <span class="badge">{{ ask_lang }} <i class="fa-solid fa-arrow-right text-[0.6rem]"></i> {{ answer_lang }}</span>
+        </p>
+        <h2 id="quiz-word" class="quiz-word" data-quiz-word>{{ word }}</h2>
+        <p class="text-sm text-muted mt-4">Wat is de vertaling in het {{ answer_lang }}?</p>
+    </section>
 
-    <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary">Stop Oefening</a>
+    {{ q.answer_form(form, url_for('main.quiz_answer', list_id=word_list.id), entry, direction, 'Typ het ' ~ answer_lang ~ ' woord...') }}
 </div>
 {% endblock %}

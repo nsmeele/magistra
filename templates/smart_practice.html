@@ -1,81 +1,105 @@
 {% extends "base.html" %}
+{% import "_quiz_macros.html" as q with context %}
 
 {% block title %}Smart Practice - Magistra{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h2>Smart Practice - Oefen je moeilijkste woorden</h2>
-    <a href="{% if word_list %}{{ url_for('main.list_detail', list_id=word_list.id) }}{% else %}{{ url_for('main.index') }}{% endif %}" class="btn btn-secondary">
-        <i class="fa-solid fa-arrow-left"></i> Terug
-    </a>
-</div>
+{% if word_list %}
+    <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> {{ word_list.name }}</a>
+{% else %}
+    <a href="{{ url_for('main.index') }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Mijn lijsten</a>
+{% endif %}
 
-<div class="bg-linear-to-br from-indigo-500 to-purple-600 text-white p-8 rounded-lg mb-8">
-    <p class="m-0 text-lg leading-relaxed">
-        <i class="fa-solid fa-brain text-xl mr-2"></i>
-        {% if word_list %}
-            Hieronder staan de <strong>{{ entries|length }} moeilijkste woorden</strong> uit "<strong>{{ word_list.name }}</strong>".
-        {% else %}
-            Hieronder staan je <strong>{{ entries|length }} moeilijkste woorden</strong> over alle lijsten.
-        {% endif %}
-        Deze woorden hebben de laagste success rate en kunnen extra oefening gebruiken!
-    </p>
-</div>
-
-<div>
-    <h3 class="mb-6">Woorden om te oefenen</h3>
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 mb-8">
-        {% for entry in entries %}
-            <div class="bg-white p-5 rounded-lg border-l-4 transition-transform hover:-translate-y-0.5 hover:shadow-lg {% if entry.success_rate is none or entry.success_rate < 20 %}border-l-red-500{% elif entry.success_rate < 40 %}border-l-red-500{% elif entry.success_rate < 60 %}border-l-orange-500{% elif entry.success_rate < 80 %}border-l-yellow-500{% else %}border-l-green-500{% endif %}">
-                <div class="mb-4">
-                    <div class="flex items-center gap-3 mb-3">
-                        <span class="text-lg font-semibold">{{ entry.source_word }}</span>
-                        <i class="fa-solid fa-right-left text-gray-500 text-sm"></i>
-                        <span class="text-lg font-semibold">{{ entry.target_word }}</span>
-                    </div>
-                    {% if entry.success_rate is not none %}
-                        <div class="mt-2">
-                            <span class="inline-block text-sm font-semibold mb-1">{{ entry.success_rate | safe_percent }}%</span>
-                            <div class="h-1.5 bg-gray-200 rounded-sm overflow-hidden">
-                                <div class="h-full bg-linear-to-r from-red-500 via-orange-500 to-green-500 transition-[width] duration-300" style="width: {{ entry.success_rate | safe_percent }}%"></div>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="flex justify-between pt-3 border-t border-gray-200 text-sm text-gray-500">
-                    <span>{{ entry.total_attempts }} pogingen</span>
-                    <span>{{ entry.list.name }}</span>
-                </div>
-            </div>
-        {% endfor %}
+<header class="page-head">
+    <div>
+        <p class="eyebrow">Smart Practice</p>
+        <h1 class="page-title">Oefen je moeilijkste woorden</h1>
+        <p class="page-subtitle">
+            {% if word_list %}
+                De {{ entries|length }} woorden uit <strong class="text-ink">{{ word_list.name }}</strong> met de laagste score.
+            {% else %}
+                Je {{ entries|length }} lastigste woorden, verzameld uit al je lijsten.
+            {% endif %}
+        </p>
     </div>
-</div>
+    <a href="#start" class="btn btn-primary self-start sm:self-auto lg:hidden" data-scroll-start>
+        <i class="fa-solid fa-play"></i> Start oefening
+    </a>
+</header>
 
-<div class="bg-white p-8 rounded-lg text-center">
-    <form method="POST">
-        <div class="max-w-[400px] mx-auto mb-6">
-            <label for="direction" class="block mb-2 font-medium text-gray-800">Kies richting:</label>
-            <select name="direction" id="direction" class="w-full px-3 py-3 border border-gray-300 rounded text-base bg-white focus:outline-hidden focus:border-blue-500 cursor-pointer">
-                <option value="random">Willekeurig (beide richtingen)</option>
-                <option value="forward">
-                    {% if word_list %}
-                        {{ word_list.source_language }} -> {{ word_list.target_language }}
+{# Desktop: word grid on the left, sticky start panel on the right. #}
+<div class="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem] lg:gap-x-8 lg:items-start">
+<section class="card card-pad mb-10 flex items-start gap-4 bg-primary-soft/40 lg:hidden" data-reveal="self">
+    <span class="grid place-items-center size-11 shrink-0 rounded-2xl bg-primary text-[color:var(--primary-text)]"><i class="fa-solid fa-brain"></i></span>
+    <div>
+        <h2 class="text-lg">Gericht herhalen werkt</h2>
+        <p class="text-muted mt-1 text-[0.95rem]">Deze woorden hebben het laagste slagingspercentage. Door ze apart te oefenen besteed je je tijd waar het meeste te winnen valt.</p>
+    </div>
+</section>
+
+<section class="mb-10 lg:col-start-1 lg:row-start-1 lg:mb-0" aria-labelledby="words-title">
+    <h2 id="words-title" class="section-title">Woorden om te oefenen <span class="badge">{{ entries|length }}</span></h2>
+    <ul class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2" data-reveal>
+        {% for entry in entries %}
+            {% set rate = entry.success_rate %}
+            {% if rate is none %}
+                {% set tone = 'muted' %}
+            {% elif rate < 40 %}
+                {% set tone = 'danger' %}
+            {% elif rate < 70 %}
+                {% set tone = 'warning' %}
+            {% else %}
+                {% set tone = 'success' %}
+            {% endif %}
+            <li class="card p-4 sm:p-5 flex flex-col gap-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="font-serif text-lg font-semibold leading-snug break-words">{{ entry.source_word }}</p>
+                        <p class="text-muted break-words">{{ entry.target_word }}</p>
+                    </div>
+                    {% if rate is none %}
+                        <span class="badge shrink-0">Nieuw</span>
                     {% else %}
-                        Bron -> Doel
+                        <span class="badge badge-{{ tone }} shrink-0 tabular-nums">{{ "%.0f"|format(rate|safe_percent) }}%</span>
                     {% endif %}
-                </option>
-                <option value="reverse">
-                    {% if word_list %}
-                        {{ word_list.target_language }} -> {{ word_list.source_language }}
-                    {% else %}
-                        Doel -> Bron
-                    {% endif %}
-                </option>
-            </select>
+                </div>
+                <div class="progress h-1.5" aria-hidden="true">
+                    <span style="width: {{ rate|safe_percent }}%; background: var(--{{ 'border-strong' if tone == 'muted' else tone }});" data-rate-bar></span>
+                </div>
+                <div class="flex items-center justify-between gap-3 text-xs text-subtle">
+                    <span class="tabular-nums">{{ entry.total_attempts }} poging{% if entry.total_attempts != 1 %}en{% endif %}</span>
+                    {% if not word_list %}<span class="truncate">{{ entry.list.name }}</span>{% endif %}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+
+<section id="start" class="card card-pad scroll-mt-24 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-8 lg:p-5" aria-labelledby="start-title">
+    <form method="POST" class="flex flex-col gap-5">
+        <div>
+            <p class="eyebrow hidden lg:flex items-center gap-2 text-primary"><i class="fa-solid fa-brain"></i> Gericht herhalen</p>
+            <h2 id="start-title" class="text-xl">Klaar om te oefenen?</h2>
+            <p class="text-muted mt-1 text-[0.95rem]">Kies een richting en start met deze {{ entries|length }} woorden.<span class="hidden lg:inline"> Ze hebben het laagste slagingspercentage, dus hier valt het meeste te winnen.</span></p>
         </div>
-        <button type="submit" class="btn btn-primary btn-large">
-            <i class="fa-solid fa-play"></i> Start Practice Quiz
+        {% if word_list %}
+            {% set src, tgt = word_list.source_language.name, word_list.target_language.name %}
+            {{ q.direction_choices([
+                ('random', 'Slim gemengd', 'De richting wordt per woord gekozen op basis van je score.'),
+                ('forward', src ~ ' → ' ~ tgt, 'Je ziet een woord in het ' ~ src ~ ' en typt het ' ~ tgt ~ '.'),
+                ('reverse', tgt ~ ' → ' ~ src, 'Je ziet een woord in het ' ~ tgt ~ ' en typt het ' ~ src ~ '.'),
+            ], compact=True) }}
+        {% else %}
+            {{ q.direction_choices([
+                ('random', 'Slim gemengd', 'De richting wordt per woord gekozen op basis van je score.'),
+                ('forward', 'Brontaal → doeltaal', 'Je ziet een woord in de brontaal en vertaalt naar de doeltaal.'),
+                ('reverse', 'Doeltaal → brontaal', 'Je ziet een woord in de doeltaal en vertaalt naar de brontaal.'),
+            ], compact=True) }}
+        {% endif %}
+        <button type="submit" class="btn btn-primary btn-lg sm:self-end lg:self-stretch">
+            <i class="fa-solid fa-play"></i> Start oefening
         </button>
     </form>
+</section>
 </div>
 {% endblock %}
