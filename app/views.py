@@ -423,7 +423,10 @@ class QuizAnswerView(MethodView):
                 )
 
                 if is_correct:
-                    flash(f"Correct! {escape(question_word)} = {escape(correct_answer)}", "success")
+                    flash(
+                        f"Correct! {escape(question_word)} = {escape(correct_answer)}",
+                        "success",
+                    )
                 else:
                     flash(
                         f"Fout! {escape(question_word)} = {escape(correct_answer)} (jij antwoordde: {escape(user_answer)})",
@@ -646,7 +649,10 @@ class MixedQuizAnswerView(MethodView):
                 )
 
                 if is_correct:
-                    flash(f"Correct! {escape(question_word)} = {escape(correct_answer)}", "success")
+                    flash(
+                        f"Correct! {escape(question_word)} = {escape(correct_answer)}",
+                        "success",
+                    )
                 else:
                     flash(
                         f"Fout! {escape(question_word)} = {escape(correct_answer)} (jij antwoordde: {escape(user_answer)})",

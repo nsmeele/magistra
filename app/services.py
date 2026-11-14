@@ -112,7 +112,12 @@ class ListService:
         self.list_repo.delete(vocab_list)
 
     def add_entry_to_list(
-        self, list_id: int, source_word: str, target_word: str, entry_type: str = "word", pronunciation_note: str = None
+        self,
+        list_id: int,
+        source_word: str,
+        target_word: str,
+        entry_type: str = "word",
+        pronunciation_note: str = None,
     ) -> Entry:
         """Add an entry to a list"""
         vocab_list = self.list_repo.get_by_id(list_id)
@@ -127,7 +132,12 @@ class ListService:
         )
 
     def update_entry(
-        self, entry_id: int, source_word: str, target_word: str, entry_type: str, pronunciation_note: str = None
+        self,
+        entry_id: int,
+        source_word: str,
+        target_word: str,
+        entry_type: str,
+        pronunciation_note: str = None,
     ) -> Entry:
         """Update an existing entry"""
         entry = self.entry_repo.get_by_id(entry_id)
