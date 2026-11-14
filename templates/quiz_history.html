@@ -1,197 +1,227 @@
 {% extends "base.html" %}
 
-{% block title %}Quiz Geschiedenis - Magistra{% endblock %}
+{%- set MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] -%}
+{%- set DIRECTIONS = {'forward': 'Heen', 'reverse': 'Terug', 'random': 'Willekeurig'} -%}
+{%- set DIRECTION_ICONS = {'forward': 'arrow-right', 'reverse': 'arrow-left', 'random': 'shuffle'} -%}
+
+{%- macro nl_date(dt, time=true) -%}
+    {%- if dt -%}{{ dt.day }} {{ MONTHS[dt.month - 1] }} {{ dt.year }}{% if time %}, {{ dt.strftime('%H:%M') }}{% endif %}{%- endif -%}
+{%- endmacro -%}
+
+{#- Full class names spelled out so Tailwind's scanner picks them up. -#}
+{%- macro band_tile(pct) -%}
+    {%- if pct >= 80 -%}bg-success-soft text-success{%- elif pct >= 60 -%}bg-warning-soft text-warning{%- else -%}bg-danger-soft text-danger{%- endif -%}
+{%- endmacro -%}
+
+{%- macro band_text(pct) -%}
+    {%- if pct >= 80 -%}text-success{%- elif pct >= 60 -%}text-warning{%- else -%}text-danger{%- endif -%}
+{%- endmacro -%}
+
+{%- macro session_title(s) -%}
+    {%- if s.quiz_type == 'single' -%}
+        {%- if s.session_lists -%}{{ s.session_lists[0].list.name }}{%- else -%}Enkele quiz{%- endif -%}
+    {%- else -%}
+        Gemengde quiz{% if s.session_lists %} ({{ s.session_lists|length }} lijsten){% endif %}
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- macro mixed_lists(s) -%}
+    {%- if s.quiz_type == 'mixed' and s.session_lists -%}
+        {%- for sl in s.session_lists[:3] -%}{{ sl.list.name }}{% if not loop.last %}, {% endif %}{%- endfor -%}
+        {%- if s.session_lists|length > 3 %} +{{ s.session_lists|length - 3 }} meer{% endif -%}
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- macro direction_badge(direction) -%}
+    <span class="badge"><i class="fa-solid fa-{{ DIRECTION_ICONS.get(direction, 'arrows-left-right') }}"></i> {{ DIRECTIONS.get(direction, direction|capitalize) }}</span>
+{%- endmacro -%}
+
+{% block title %}Quizgeschiedenis - Magistra{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h2>Quiz Geschiedenis</h2>
-    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
-        <i class="fa-solid fa-arrow-left"></i> Terug naar overzicht
-    </a>
-</div>
+<header class="page-head">
+    <div>
+        <p class="eyebrow">Voortgang</p>
+        <h1 class="page-title">Quizgeschiedenis</h1>
+        <p class="page-subtitle">
+            {% if sessions %}
+                Bekijk hoe je scores zich ontwikkelen en waar nog winst te halen valt.
+            {% else %}
+                Hier verschijnen je resultaten zodra je een quiz hebt afgerond.
+            {% endif %}
+        </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-layer-group"></i> Naar lijsten
+        </a>
+    </div>
+</header>
+
+{% set has_trend = sessions|length > 3 %}
+<div class="xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-x-6">
+{% if sessions %}
+    {% set scores = sessions|map(attribute='score_percentage')|list %}
+    {% set avg = (scores|sum / scores|length) %}
+    {% set best = scores|max %}
+    {% set total_q = sessions|map(attribute='total_questions')|sum %}
+    {% set total_ok = sessions|map(attribute='correct_answers')|sum %}
+
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8 xl:col-span-2" aria-label="Statistieken" data-reveal>
+        <div class="stat">
+            <div class="stat-value" data-count="{{ sessions|length }}">{{ sessions|length }}</div>
+            <div class="stat-label">Quizzen voltooid</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value {{ band_text(avg) }}" data-count="{{ '%.1f'|format(avg) }}" data-decimals="1" data-suffix="%">{{ ('%.1f'|format(avg))|replace('.', ',') }}%</div>
+            <div class="stat-label">Gemiddelde score</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" data-count="{{ '%.1f'|format(best) }}" data-decimals="{{ 0 if best == best|int else 1 }}" data-suffix="%">{{ ('%.1f'|format(best))|replace('.', ',')|replace(',0', '') }}%</div>
+            <div class="stat-label">Beste score</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" data-count="{{ total_q }}">{{ total_q }}</div>
+            <div class="stat-label">Vragen beantwoord <span class="text-subtle">· {{ total_ok }} goed</span></div>
+        </div>
+    </section>
+{% endif %}
 
 {% if incomplete_sessions %}
-    <div class="bg-linear-to-br from-fuchsia-400 to-rose-500 p-8 rounded-lg mb-8">
-        <h3 class="text-white mt-0">Onvoltooide Quizzen</h3>
-        <p class="text-white mb-6">Je hebt {{ incomplete_sessions|length }} quiz{% if incomplete_sessions|length != 1 %}zes{% endif %} die nog niet af {% if incomplete_sessions|length == 1 %}is{% else %}zijn{% endif %}:</p>
+    <section class="mb-10 {% if has_trend %}xl:col-start-2 xl:row-start-2{% else %}xl:col-span-2{% endif %}" aria-labelledby="incomplete-title">
+        <div class="flex items-baseline justify-between gap-3 mb-4">
+            <h2 id="incomplete-title" class="section-title mb-0">
+                <i class="fa-solid fa-hourglass-half text-warning"></i> Onvoltooide quizzen
+            </h2>
+            <span class="badge badge-warning">{{ incomplete_sessions|length }} open</span>
+        </div>
 
-        {% for session in incomplete_sessions %}
-            <div class="bg-white p-6 rounded-lg mb-4 border-l-4 border-l-rose-500 hover:shadow-lg">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h4 class="m-0 mb-1">
-                            {% if session.quiz_type == 'single' %}
-                                {% if session.session_lists %}
-                                    {{ session.session_lists[0].list.name }}
-                                {% else %}
-                                    Enkele Quiz
-                                {% endif %}
-                            {% else %}
-                                Gemengde Quiz
-                                {% if session.session_lists %}
-                                    ({{ session.session_lists|length }} lijsten)
-                                {% endif %}
+        <div class="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 {% if has_trend %}xl:grid-cols-1{% else %}lg:grid-cols-3{% endif %}" data-reveal>
+            {% for session in incomplete_sessions %}
+                {% set pct = ((session.current_index / session.total_questions * 100) if session.total_questions > 0 else 0)|safe_percent %}
+                <article class="card p-5 flex flex-col gap-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <h3 class="text-lg leading-snug truncate">{{ session_title(session) }}</h3>
+                            <p class="text-sm text-muted mt-0.5">Gestart op {{ nl_date(session.started_at) }}</p>
+                            {% if session.quiz_type == 'mixed' and session.session_lists %}
+                                <p class="text-sm text-subtle mt-1 truncate">{{ mixed_lists(session) }}</p>
                             {% endif %}
-                        </h4>
-                        <p class="text-gray-500 text-sm m-0">Gestart op {{ session.started_at.strftime('%d %b %Y, %H:%M') }}</p>
+                        </div>
+                        {{ direction_badge(session.direction) }}
                     </div>
-                    <div class="text-right">
-                        <span class="block font-semibold mb-2">{{ session.current_index }}/{{ session.total_questions }}</span>
-                        <div class="w-30 h-2 bg-gray-200 rounded overflow-hidden">
-                            <div class="h-full bg-linear-to-r from-fuchsia-400 to-rose-500 transition-[width] duration-300" style="width: {{ ((session.current_index / session.total_questions * 100) if session.total_questions > 0 else 0) | safe_percent }}%"></div>
+
+                    <div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-muted">Vraag {{ session.current_index }} van {{ session.total_questions }}</span>
+                            <span class="font-semibold tabular-nums">{{ pct|round|int }}%</span>
+                        </div>
+                        <div class="progress" role="progressbar" aria-label="Voortgang" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pct|round|int }}">
+                            <span style="width: {{ pct }}%" data-progress="{{ pct }}"></span>
                         </div>
                     </div>
-                </div>
-                <div class="flex gap-4 items-center mb-4">
-                    <span class="inline-block px-3 py-1 bg-blue-500 text-white rounded text-sm uppercase">{{ session.direction|upper }}</span>
-                    {% if session.quiz_type == 'mixed' and session.session_lists %}
-                        <span class="text-gray-500 text-sm">
-                            {% for sl in session.session_lists[:3] %}
-                                {{ sl.list.name }}{% if not loop.last %}, {% endif %}
-                            {% endfor %}
-                            {% if session.session_lists|length > 3 %}
-                                +{{ session.session_lists|length - 3 }} meer
-                            {% endif %}
-                        </span>
-                    {% endif %}
-                </div>
-                <div class="flex gap-2">
-                    <a href="{{ url_for('main.resume_quiz', session_id=session.id) }}" class="btn btn-small btn-primary">
-                        <i class="fa-solid fa-play"></i> Hervat Quiz
+
+                    <a href="{{ url_for('main.resume_quiz', session_id=session.id) }}" class="btn btn-primary btn-block sm:w-auto sm:self-start">
+                        <i class="fa-solid fa-play"></i> Hervat quiz
                     </a>
-                </div>
-            </div>
-        {% endfor %}
-    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
 {% endif %}
+
+{% if has_trend %}
+        {% set ns = namespace(points=[]) %}
+        {% for s in sessions|reverse %}
+            {% set ns.points = ns.points + [{
+                'score': s.score_percentage,
+                'date': nl_date(s.completed_at or s.started_at, time=false),
+                'title': session_title(s)|striptags,
+                'correct': s.correct_answers,
+                'total': s.total_questions
+            }] %}
+        {% endfor %}
+        <section class="card card-pad mb-10 {% if incomplete_sessions %}xl:col-start-1 xl:row-start-2 xl:flex xl:flex-col{% else %}xl:col-span-2{% endif %}" aria-labelledby="trend-title" data-reveal="self">
+            <div class="flex items-baseline justify-between gap-3 mb-5">
+                <h2 id="trend-title" class="section-title mb-0">Scoreverloop</h2>
+                <span class="text-sm text-muted">Oud → nieuw</span>
+            </div>
+            <div class="relative h-56 sm:h-72 xl:h-auto xl:min-h-72 xl:max-h-[30rem] xl:flex-1">
+                <canvas id="score-trend-chart" role="img" aria-label="Lijngrafiek van je quizscores in procenten, van oud naar nieuw"></canvas>
+            </div>
+            <script type="application/json" id="score-trend-data">{{ ns.points|tojson }}</script>
+        </section>
+{% endif %}
+</div>
 
 {% if sessions %}
-    <div class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-8">
-        <div class="bg-white p-6 rounded-lg text-center">
-            <h3 class="text-4xl m-0 mb-2 text-blue-500">{{ sessions|length }}</h3>
-            <p class="m-0 text-gray-500">Quizzen voltooid</p>
-        </div>
-        <div class="bg-white p-6 rounded-lg text-center">
-            <h3 class="text-4xl m-0 mb-2 text-blue-500">{{ "%.1f"|format((sessions|map(attribute='score_percentage')|sum / sessions|length) if sessions else 0) }}%</h3>
-            <p class="m-0 text-gray-500">Gemiddelde score</p>
-        </div>
-    </div>
 
-    {% if sessions|length > 3 %}
-    <div class="bg-white p-6 rounded-lg mb-8">
-        <h3 class="mt-0">Score Verloop</h3>
-        <canvas id="scoreTrendChart" width="400" height="150"></canvas>
-    </div>
-    {% endif %}
+    {% set single_count = sessions|selectattr('quiz_type', 'equalto', 'single')|list|length %}
+    {% set mixed_count = sessions|length - single_count %}
 
-    <div>
-        <h3 class="mb-4">Alle Quizzen</h3>
-        {% for session in sessions %}
-            <div class="bg-white p-6 rounded-lg mb-4 border-l-4 border-l-gray-200 hover:shadow-lg">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h4 class="m-0 mb-1">
-                            {% if session.quiz_type == 'single' %}
-                                {% if session.session_lists %}
-                                    {{ session.session_lists[0].list.name }}
-                                {% else %}
-                                    Enkele Quiz
-                                {% endif %}
-                            {% else %}
-                                Gemengde Quiz
-                                {% if session.session_lists %}
-                                    ({{ session.session_lists|length }} lijsten)
-                                {% endif %}
-                            {% endif %}
-                        </h4>
-                        <p class="text-gray-500 text-sm m-0">{{ session.completed_at.strftime('%d %b %Y, %H:%M') }}</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="block text-2xl font-bold {% if session.score_percentage >= 80 %}text-green-500{% elif session.score_percentage >= 60 %}text-orange-500{% else %}text-red-500{% endif %}">{{ session.correct_answers }}/{{ session.total_questions }}</span>
-                        <span class="block text-sm text-gray-500">{{ session.score_percentage }}%</span>
-                    </div>
+    <section aria-labelledby="all-title" data-history-list>
+        <div class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 id="all-title" class="section-title mb-0">Alle quizzen</h2>
+            {% if single_count and mixed_count %}
+                <div class="chips" role="group" aria-label="Filter op type">
+                    <button type="button" class="chip" data-filter="all" aria-pressed="true">Alles <span class="count">{{ sessions|length }}</span></button>
+                    <button type="button" class="chip" data-filter="single" aria-pressed="false">Enkel <span class="count">{{ single_count }}</span></button>
+                    <button type="button" class="chip" data-filter="mixed" aria-pressed="false">Gemengd <span class="count">{{ mixed_count }}</span></button>
                 </div>
-                <div class="flex gap-4 items-center mb-4">
-                    <span class="inline-block px-3 py-1 bg-blue-500 text-white rounded text-sm uppercase">{{ session.direction|upper }}</span>
-                    {% if session.quiz_type == 'mixed' and session.session_lists %}
-                        <span class="text-gray-500 text-sm">
-                            {% for sl in session.session_lists[:3] %}
-                                {{ sl.list.name }}{% if not loop.last %}, {% endif %}
-                            {% endfor %}
-                            {% if session.session_lists|length > 3 %}
-                                +{{ session.session_lists|length - 3 }} meer
-                            {% endif %}
-                        </span>
-                    {% endif %}
-                </div>
-                <div class="flex gap-2">
-                    <a href="{{ url_for('main.quiz_history_detail', session_id=session.id) }}" class="btn btn-small btn-primary">
-                        <i class="fa-solid fa-eye"></i> Bekijk Details
-                    </a>
-                </div>
+            {% endif %}
+        </div>
+
+        <div class="history-table">
+            {#- Column headings: desktop only, the rows below become a table there. -#}
+            <div class="history-head hidden lg:grid lg:gap-x-4 xl:gap-x-5" aria-hidden="true">
+                <span>Score</span>
+                <span>Quiz</span>
+                <span class="hidden xl:block">Type</span>
+                <span>Richting</span>
+                <span class="text-right">Goed</span>
+                <span>Datum</span>
+                <span></span>
             </div>
-        {% endfor %}
+            <div class="flex flex-col gap-2.5 lg:gap-0" data-reveal data-filter-items>
+                {% for session in sessions %}
+                    <a href="{{ url_for('main.quiz_history_detail', session_id=session.id) }}"
+                       class="history-row card card-link flex items-center gap-4 p-3.5 sm:p-4 lg:grid lg:gap-x-4 lg:px-5 lg:py-3 xl:gap-x-5"
+                       data-type="{{ session.quiz_type }}">
+                        <span class="grid place-items-center shrink-0 size-14 rounded-xl lg:size-11 lg:rounded-lg {{ band_tile(session.score_percentage) }} font-serif font-semibold tabular-nums leading-none">
+                            <span class="text-lg lg:text-base">{{ session.score_percentage|round|int }}<span class="text-xs">%</span></span>
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block font-semibold truncate">{{ session_title(session) }}</span>
+                            {% if session.quiz_type == 'mixed' and session.session_lists %}
+                                <span class="block text-sm text-subtle truncate">{{ mixed_lists(session) }}</span>
+                            {% endif %}
+                            <span class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted lg:hidden">
+                                <span class="tabular-nums">{{ session.correct_answers }}/{{ session.total_questions }} goed</span>
+                                <span aria-hidden="true" class="text-subtle">·</span>
+                                <span>{{ nl_date(session.completed_at or session.started_at) }}</span>
+                            </span>
+                            <span class="mt-2 hidden sm:flex flex-wrap gap-1.5 lg:hidden">
+                                <span class="badge">{{ 'Enkel' if session.quiz_type == 'single' else 'Gemengd' }}</span>
+                                {{ direction_badge(session.direction) }}
+                            </span>
+                        </span>
+                        {#- Desktop table cells -#}
+                        <span class="hidden xl:block text-sm text-muted">{{ 'Enkel' if session.quiz_type == 'single' else 'Gemengd' }}</span>
+                        <span class="hidden lg:block">{{ direction_badge(session.direction) }}</span>
+                        <span class="hidden lg:block text-sm text-right tabular-nums"><span class="font-semibold text-ink">{{ session.correct_answers }}</span><span class="text-subtle">/{{ session.total_questions }}</span><span class="sr-only"> goed</span></span>
+                        <span class="hidden lg:block text-sm text-muted tabular-nums whitespace-nowrap"><span class="xl:hidden">{{ nl_date(session.completed_at or session.started_at, time=false) }}</span><span class="hidden xl:inline">{{ nl_date(session.completed_at or session.started_at) }}</span></span>
+                        <i class="fa-solid fa-chevron-right text-subtle shrink-0" aria-hidden="true"></i>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% elif not incomplete_sessions %}
+    <div class="empty" data-reveal="self">
+        <span class="empty-icon"><i class="fa-solid fa-chart-line"></i></span>
+        <h2 class="text-xl">Nog geen quizzen</h2>
+        <p class="text-muted max-w-sm">Je hebt nog geen quizzen voltooid. Kies een lijst en test wat je al weet.</p>
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-2"><i class="fa-solid fa-play"></i> Start een quiz</a>
     </div>
-{% else %}
-    <p class="empty-state">Je hebt nog geen quizzen voltooid. <a href="{{ url_for('main.index') }}">Start een quiz!</a></p>
-{% endif %}
-
-{% if sessions|length > 3 %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-<script>
-const ctx = document.getElementById('scoreTrendChart').getContext('2d');
-const sessions = [{% for s in sessions %}{{ s.to_dict()|tojson }}{% if not loop.last %},{% endif %}{% endfor %}];
-
-// Reverse to show oldest first in chart
-const reversedSessions = sessions.slice().reverse();
-
-const chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: reversedSessions.map((s, i) => i + 1),
-        datasets: [{
-            label: 'Score %',
-            data: reversedSessions.map(s => s.score_percentage),
-            borderColor: '#4CAF50',
-            backgroundColor: 'rgba(76, 175, 80, 0.1)',
-            tension: 0.3,
-            fill: true
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        scales: {
-            y: {
-                beginAtZero: true,
-                max: 100,
-                ticks: {
-                    callback: function(value) {
-                        return value + '%';
-                    }
-                }
-            },
-            x: {
-                title: {
-                    display: true,
-                    text: 'Quiz Nummer'
-                }
-            }
-        },
-        plugins: {
-            legend: {
-                display: false
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return context.parsed.y.toFixed(1) + '%';
-                    }
-                }
-            }
-        }
-    }
-});
-</script>
 {% endif %}
 {% endblock %}

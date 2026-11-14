@@ -1,0 +1,171 @@
+/* Page-specific styles for the history pages. Prefer Tailwind utilities and shared components in style.css. */
+@layer components {
+    /* Desktop only: everything below leaves the mobile layout untouched. */
+    @media (width >= 64rem) {
+        /* Session list as one calm table instead of a stack of cards. */
+        .history-table {
+            --history-cols: 2.75rem minmax(0, 1fr) 7.5rem 3.5rem 6.5rem 1rem;
+            @apply bg-surface rounded-2xl border border-line overflow-hidden;
+            box-shadow: var(--shadow);
+        }
+
+        @media (width >= 80rem) {
+            .history-table {
+                --history-cols: 2.75rem minmax(0, 1fr) 5.5rem 8.5rem 3.5rem 10rem 1rem;
+            }
+        }
+
+        .history-head,
+        .history-table .history-row {
+            grid-template-columns: var(--history-cols);
+        }
+
+        .history-head {
+            @apply px-5 py-3 border-b border-line bg-surface-2 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-subtle;
+        }
+
+        .history-table .history-row {
+            @apply rounded-none border-0;
+            box-shadow: none;
+            transition: background-color 0.15s ease;
+        }
+
+        .history-table .history-row + .history-row {
+            @apply border-t border-line;
+        }
+
+        .history-table .history-row:hover {
+            @apply bg-surface-2 border-line;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .history-table .history-row:focus-visible {
+            outline-offset: -3px;
+        }
+
+        .history-table .history-row > svg:last-child {
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .history-table .history-row:hover > svg:last-child {
+            @apply text-primary;
+            transform: translateX(2px);
+        }
+
+        /* Quiz detail: answers as table rows (question / your answer / correct answer). */
+        .answers-table {
+            --answer-cols: 2rem minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr);
+            @apply bg-surface rounded-2xl border border-line overflow-hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .answers-table.is-mixed {
+            --answer-cols: 2rem minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+        }
+
+        .answers-head,
+        .answers-table .answer-row {
+            grid-template-columns: var(--answer-cols);
+            column-gap: 1.25rem;
+        }
+
+        .answers-head {
+            @apply px-5 py-3 border-b border-line bg-surface-2 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-subtle;
+            /* line up with the rows, which carry a 4px status stripe */
+            padding-left: calc(1.25rem + 4px);
+        }
+
+        .answers-table .answer-row {
+            @apply rounded-none border-y-0 border-r-0;
+            box-shadow: none;
+        }
+
+        .answers-table .answer-row + .answer-row {
+            @apply border-t;
+        }
+
+        /* ------------------------------------------------------------ */
+        /* Form pages (new list, edit entry, edit list): side panel      */
+        /* ------------------------------------------------------------ */
+
+        .form-aside {
+            @apply sticky top-8 flex-col gap-5 rounded-2xl border border-line p-6 text-sm text-muted;
+            background: color-mix(in oklab, var(--surface-2) 55%, transparent);
+        }
+
+        .form-aside-title {
+            @apply font-serif text-lg font-semibold text-ink;
+        }
+
+        .form-steps {
+            @apply flex flex-col gap-3.5;
+        }
+
+        .form-steps li {
+            @apply flex items-start gap-3 leading-snug;
+        }
+
+        .form-steps strong {
+            @apply font-semibold text-ink;
+        }
+
+        .form-step-num {
+            @apply grid place-items-center size-6 shrink-0 rounded-full border border-line bg-surface text-xs font-semibold tabular-nums text-muted;
+        }
+
+        .form-steps li.is-current .form-step-num {
+            @apply border-primary bg-primary;
+            color: var(--primary-text);
+        }
+
+        .form-tip {
+            @apply border-t border-line pt-5 leading-relaxed;
+        }
+
+        .form-facts {
+            @apply grid grid-cols-2 gap-3;
+        }
+
+        .form-fact {
+            @apply rounded-xl border border-line bg-surface px-3.5 py-3;
+        }
+
+        .form-fact-value {
+            @apply block font-serif text-2xl font-semibold tabular-nums text-ink leading-tight;
+        }
+
+        .form-fact-label {
+            @apply block text-xs text-muted mt-0.5;
+        }
+
+        .form-links {
+            @apply flex flex-col;
+        }
+
+        .form-links a,
+        .form-links .is-disabled {
+            @apply flex items-center gap-3 py-2.5 border-t border-line text-ink no-underline font-medium;
+        }
+
+        .form-links .is-disabled {
+            @apply text-subtle cursor-not-allowed;
+        }
+
+        .form-links > :first-child {
+            @apply border-t-0 pt-0;
+        }
+
+        .form-links a:hover {
+            @apply text-primary;
+        }
+
+        .form-links > * > svg:first-child {
+            @apply w-4 text-subtle;
+        }
+
+        .form-links > * > svg:last-child {
+            @apply ml-auto text-xs text-subtle;
+        }
+    }
+}

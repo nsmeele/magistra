@@ -1,42 +1,31 @@
 {% extends "base.html" %}
+{% import "_quiz_macros.html" as q with context %}
 
-{% block title %}Gemengde Quiz - Magistra{% endblock %}
+{% block title %}Gemengde quiz - Magistra{% endblock %}
+
+{# Answer feedback is rendered inline above the question; other messages stay toasts. #}
+{% block flashes %}{{ q.flash_toasts() }}{% endblock %}
 
 {% block content %}
-<div class="quiz-container">
-    <div class="quiz-header">
-        <h2>Gemengde Quiz</h2>
-        <p class="quiz-lists">{{ list_names|join(', ') }}</p>
-        <p class="quiz-progress">Vraag {{ progress }}</p>
-    </div>
+{% if direction == 'forward' %}
+    {% set ask_lang, answer_lang, word = entry.list.source_language.name, entry.list.target_language.name, entry.source_word %}
+{% else %}
+    {% set ask_lang, answer_lang, word = entry.list.target_language.name, entry.list.source_language.name, entry.target_word %}
+{% endif %}
+<div class="quiz quiz-layout" data-quiz-question>
+    {{ q.quiz_header('Gemengde quiz', list_names|join(', ') or 'Meerdere lijsten', url_for('main.index')) }}
 
-    <div class="quiz-question">
-        <p class="question-label">
-            {% if direction == 'forward' %}
-                Wat is de vertaling van:
-            {% else %}
-                Wat is het {{ entry.list.source_language }} woord voor:
-            {% endif %}
+    {{ q.quiz_aside(progress, combo|default(0)) }}
+
+    <section class="quiz-card py-8 sm:py-14 lg:py-16" data-quiz-card aria-labelledby="quiz-word">
+        <p class="flex flex-wrap items-center justify-center gap-2 mb-4">
+            <span class="badge">{{ ask_lang }} <i class="fa-solid fa-arrow-right text-[0.6rem]"></i> {{ answer_lang }}</span>
+            {% if list_names|length > 1 %}<span class="badge badge-primary max-w-full truncate">{{ entry.list.name }}</span>{% endif %}
         </p>
-        <h3 class="question-word">
-            {{ entry.source_word if direction == 'forward' else entry.target_word }}
-        </h3>
-    </div>
+        <h2 id="quiz-word" class="quiz-word" data-quiz-word>{{ word }}</h2>
+        <p class="text-sm text-muted mt-4">Wat is de vertaling in het {{ answer_lang }}?</p>
+    </section>
 
-    <form method="POST" action="{{ url_for('main.mixed_quiz_answer') }}" class="quiz-form">
-        {{ form.hidden_tag() }}
-        <input type="hidden" name="entry_id" value="{{ entry.id }}">
-        <input type="hidden" name="direction" value="{{ direction }}">
-
-        <div class="form-group">
-            {{ form.answer(class="form-control", placeholder="Jouw antwoord...", autofocus=True, autocomplete="off") }}
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary btn-large">
-                <i class="fa-solid fa-check"></i> Controleer
-            </button>
-        </div>
-    </form>
+    {{ q.answer_form(form, url_for('main.mixed_quiz_answer'), entry, direction, 'Typ het ' ~ answer_lang ~ ' woord...') }}
 </div>
 {% endblock %}

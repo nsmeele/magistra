@@ -1,20 +1,32 @@
-// Import FontAwesome
-import '@fortawesome/fontawesome-free/js/all.js';
-
-// Import our custom styles
+import { initIcons } from './js/core/icons.js';
 import './style.css';
 
-const entryInputs = [
-    document.getElementById("source_word"),
-    document.getElementById("target_word"),
-].filter(Boolean);
+import { initTheme } from './js/core/theme.js';
+import { initToasts } from './js/core/toasts.js';
+import { initConfirm } from './js/core/confirm.js';
+import { initSearch } from './js/core/search.js';
+import { initReveal } from './js/core/motion.js';
 
-entryInputs.forEach(entry => {
-    // skip dot at the end.
-    entry.addEventListener("input", (event) => {
-        const value = event.target.value;
-        if (value.endsWith('.')) {
-            event.target.value = value.slice(0, -1);
-        }
-    });
+import { initLists } from './js/pages/lists.js';
+import { initQuiz } from './js/pages/quiz.js';
+import { initHistory } from './js/pages/history.js';
+import { initGame } from './js/pages/game.js';
+
+const ready = (fn) =>
+    document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', fn) : fn();
+
+ready(() => {
+    initIcons();
+    initTheme();
+    initToasts();
+    initConfirm();
+    initSearch();
+    initReveal();
+
+    // Page modules guard themselves on document.body.dataset.page.
+    const page = document.body.dataset.page;
+    initLists(page);
+    initQuiz(page);
+    initHistory(page);
+    initGame(page);
 });

@@ -1,40 +1,80 @@
 {% extends "base.html" %}
+{% from "_game.html" import daily_card, mastery_stars %}
 
-{% block title %}Alle Woordjes - Magistra{% endblock %}
+{% block title %}Alle woordjes - Magistra{% endblock %}
 
 {% block content %}
-<div class="list-header">
+<header class="page-head">
     <div>
-        <h2>Alle Woordjes</h2>
-        <p class="text-gray-600">Overzicht van alle woorden en zinnen uit al je lijsten</p>
+        <p class="eyebrow">Overzicht</p>
+        <h1 class="page-title">Alle woordjes</h1>
+        <p class="page-subtitle">Alle woorden en zinnen uit al je lijsten op één plek.</p>
     </div>
-</div>
+    {% if entries %}
+        <div class="stat py-3 px-5 self-start sm:self-auto">
+            <div class="font-serif text-2xl font-semibold tabular-nums" data-count-up="{{ entries|length }}">{{ entries|length }}</div>
+            <div class="text-xs text-muted">items in totaal</div>
+        </div>
+    {% endif %}
+</header>
 
 {% if entries %}
-    <p class="mb-4"><strong>Totaal:</strong> {{ entries|length }} items</p>
-    <table class="words-table">
-        <thead>
-            <tr>
-                <th>Brontaal</th>
-                <th>Doeltaal</th>
-                <th>Uitspraak</th>
-                <th>Acties</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for entry in entries %}
-                <tr>
-                    <td>{{ entry.source_word }}</td>
-                    <td>{{ entry.target_word }}</td>
-                    <td>{{ entry.pronunciation_note or '-' }}</td>
-                    <td>
-                        <a href="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="btn btn-small btn-secondary"><i class="fa-solid fa-pen-to-square"></i></a>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="sticky top-16 lg:top-0 z-30 -mx-4 px-4 py-3 mb-4 sm:mx-0 sm:px-0 search-bar">
+        <div class="flex items-center gap-3">
+            <div class="search flex-1 max-w-xl">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" class="input" placeholder="Zoek een woord, vertaling of lijst..." aria-label="Zoek in alle woordjes" data-search="all-entries" autocomplete="off">
+            </div>
+            <p class="text-sm text-muted whitespace-nowrap" aria-live="polite">
+                <span class="font-semibold text-ink tabular-nums" data-search-count="all-entries">{{ entries|length }}</span> <span class="hidden sm:inline">zichtbaar</span>
+            </p>
+        </div>
+    </div>
+
+    <ul class="entry-list" id="all-entries" data-enter-rows>
+        <li class="entry-head" aria-hidden="true">
+            <span>Woord</span>
+            <span>Vertaling</span>
+            <span>Lijst en details</span>
+            <span class="entry-head-actions"></span>
+        </li>
+        {% for entry in entries %}
+            <li class="entry-row" data-search-text="{{ entry.source_word }} {{ entry.target_word }} {{ entry.pronunciation_note or '' }} {{ entry.list.name if entry.list else '' }}">
+                <div class="entry-main min-w-0">
+                    <p class="entry-term"{% if entry.list %} lang="{{ entry.list.source_language.code }}"{% endif %}>{{ entry.source_word }}</p>
+                    <p class="entry-translation"{% if entry.list %} lang="{{ entry.list.target_language.code }}"{% endif %}>{{ entry.target_word }}</p>
+                </div>
+                <div class="entry-actions row-span-1">
+                    <a href="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="btn btn-ghost btn-icon" aria-label="{{ entry.source_word }} bewerken" title="Bewerken"><i class="fa-solid fa-pen"></i></a>
+                </div>
+                <div class="entry-meta col-span-2 lg:col-span-1">
+                    {% if entry.list %}
+                        <a href="{{ url_for('main.list_detail', list_id=entry.list.id) }}" class="badge badge-primary no-underline hover:underline max-w-full">
+                            <i class="fa-solid fa-layer-group text-[0.65rem]"></i>
+                            <span class="truncate">{{ entry.list.name }}</span>
+                        </a>
+                    {% endif %}
+                    <span class="badge">{{ entry.entry_type | entry_type_label }}</span>
+                    {{ mastery_stars(entry) }}
+                    {% if entry.pronunciation_note %}
+                        <span class="badge badge-pron"><i class="fa-solid fa-volume-low text-[0.65rem]"></i> {{ entry.pronunciation_note }}</span>
+                    {% endif %}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <div class="empty mt-2" data-search-empty="all-entries" hidden>
+        <span class="empty-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <h2 class="text-xl">Niets gevonden</h2>
+        <p class="text-muted max-w-sm">Geen woordje komt overeen met je zoekterm. Druk op <span class="kbd">Esc</span> om te wissen.</p>
+    </div>
 {% else %}
-    <p class="empty-state">Je hebt nog geen woordjes toegevoegd. Maak eerst een lijst aan en voeg items toe!</p>
+    <div class="empty" data-reveal="self">
+        <span class="empty-icon"><i class="fa-solid fa-book-open"></i></span>
+        <h2 class="text-xl">Nog geen woordjes</h2>
+        <p class="text-muted max-w-sm">Maak eerst een lijst aan en voeg er woorden of zinnen aan toe. Ze verschijnen dan hier.</p>
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary mt-2"><i class="fa-solid fa-layer-group"></i> Naar mijn lijsten</a>
+    </div>
 {% endif %}
 {% endblock %}

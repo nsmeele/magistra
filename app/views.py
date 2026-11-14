@@ -1,17 +1,36 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask.views import MethodView
-from markupsafe import escape
 
+from app import db
 from app.forms import (
     AddEntryForm,
     DeleteForm,
+    ImportSamplesForm,
     EditEntryForm,
     LanguageFilterForm,
     NewListForm,
     QuizAnswerForm,
     QuizDirectionForm,
 )
+from app.game import build_profile, current_combo, quiz_rewards
+from app.seeding import import_sample_lists
 from app.services import CategoryService, LanguageService, ListService, QuizService
+
+
+def _safe_rewards(quiz_session_id):
+    """Game rewards for a finished quiz; never break the results page."""
+    try:
+        return quiz_rewards(quiz_session_id)
+    except Exception as e:
+        print(f"Error computing quiz rewards: {e}")
+        return None
+
+
+class ProfileView(MethodView):
+    """Player profile: level, streak, daily goal and achievements"""
+
+    def get(self):
+        return render_template("profile.html", profile=build_profile())
 
 
 class IndexView(MethodView):
@@ -43,7 +62,35 @@ class IndexView(MethodView):
             form=form,
             languages=languages,
             selected_language=selected_language,
+            import_form=ImportSamplesForm(),
         )
+
+
+class ImportSamplesView(MethodView):
+    """Import the bundled sample lists (Greek alphabet, Latin verbs)"""
+
+    def post(self):
+        form = ImportSamplesForm()
+        if not form.validate_on_submit():
+            flash("Importeren mislukt, probeer het opnieuw.", "error")
+            return redirect(url_for("main.index"))
+
+        try:
+            result = import_sample_lists()
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Importeren mislukt: {e}", "error")
+            return redirect(url_for("main.index"))
+
+        if result.lists_created:
+            flash(
+                f"{result.lists_created} voorbeeldlijsten geïmporteerd "
+                f"met {result.entries_created} items!",
+                "success",
+            )
+        else:
+            flash("De voorbeeldlijsten staan er al.", "info")
+        return redirect(url_for("main.index"))
 
 
 class AllEntriesView(MethodView):
@@ -354,6 +401,7 @@ class QuizView(MethodView):
             session.pop("quiz_session_id", None)
             return render_template(
                 "quiz_complete.html",
+                rewards=_safe_rewards(quiz_session_id),
                 score=results["score"],
                 total=results["total"],
                 word_list=word_list,
@@ -383,6 +431,7 @@ class QuizView(MethodView):
         form = QuizAnswerForm()
         return render_template(
             "quiz.html",
+            combo=current_combo(session.get("quiz_session_id")),
             entry=entry,
             word_list=word_list,
             progress=progress,
@@ -424,12 +473,12 @@ class QuizAnswerView(MethodView):
 
                 if is_correct:
                     flash(
-                        f"Correct! {escape(question_word)} = {escape(correct_answer)}",
+                        f"Correct! {question_word} = {correct_answer}",
                         "success",
                     )
                 else:
                     flash(
-                        f"Fout! {escape(question_word)} = {escape(correct_answer)} (jij antwoordde: {escape(user_answer)})",
+                        f"Fout! {question_word} = {correct_answer} (jij antwoordde: {user_answer})",
                         "error",
                     )
 
@@ -581,6 +630,7 @@ class MixedQuizQuestionView(MethodView):
             session.pop("quiz_session_id", None)
             return render_template(
                 "mixed_quiz_complete.html",
+                rewards=_safe_rewards(quiz_session_id),
                 score=results["score"],
                 total=results["total"],
                 list_names=list_names,
@@ -609,6 +659,7 @@ class MixedQuizQuestionView(MethodView):
         list_names = session.get("quiz_list_names", [])
         return render_template(
             "mixed_quiz_question.html",
+            combo=current_combo(session.get("quiz_session_id")),
             entry=entry,
             progress=progress,
             direction=direction,
@@ -650,12 +701,12 @@ class MixedQuizAnswerView(MethodView):
 
                 if is_correct:
                     flash(
-                        f"Correct! {escape(question_word)} = {escape(correct_answer)}",
+                        f"Correct! {question_word} = {correct_answer}",
                         "success",
                     )
                 else:
                     flash(
-                        f"Fout! {escape(question_word)} = {escape(correct_answer)} (jij antwoordde: {escape(user_answer)})",
+                        f"Fout! {question_word} = {correct_answer} (jij antwoordde: {user_answer})",
                         "error",
                     )
 

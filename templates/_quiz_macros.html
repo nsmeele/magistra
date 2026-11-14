@@ -1,0 +1,323 @@
+{#- Shared building blocks for the quiz flow pages. Import with context. -#}
+
+{#- Direction picker as radio cards. options: list of (value, label, description). -#}
+{#-
+    columns=True lays the options out side by side as tall cards on desktop;
+    compact=True makes them slim rows (no description) for a desktop side panel.
+-#}
+{% macro direction_choices(options, selected='random', name='direction', columns=False, compact=False) %}
+<fieldset class="choice-group{% if columns %} choice-group-cols{% endif %}{% if compact %} choice-group-compact{% endif %}" data-reveal>
+    <legend class="sr-only">Kies de richting</legend>
+    {% for value, label, desc in options %}
+        <label class="choice"{% if compact %} title="{{ desc }}"{% endif %}>
+            <input type="radio" name="{{ name }}" value="{{ value }}"{% if value == (selected or 'random') %} checked{% endif %}>
+            <span class="choice-icon" aria-hidden="true">
+                {% if value == 'random' %}<i class="fa-solid fa-shuffle"></i>{% elif value == 'forward' %}<i class="fa-solid fa-arrow-right"></i>{% else %}<i class="fa-solid fa-arrow-left"></i>{% endif %}
+            </span>
+            <span class="min-w-0 flex-1">
+                <span class="choice-title block">{{ label }}</span>
+                <span class="choice-desc block{% if compact %} lg:hidden{% endif %}">{{ desc }}</span>
+            </span>
+            <span class="choice-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+        </label>
+    {% endfor %}
+</fieldset>
+{% endmacro %}
+
+{#- Non-answer flash messages as toasts (same markup as base.html). -#}
+{% macro flash_toasts() %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% set others = [] %}
+    {% for category, message in messages if not message.startswith(('Correct! ', 'Fout! ')) %}
+        {% set _ = others.append((category, message)) %}
+    {% endfor %}
+    {% if others %}
+        <div class="toasts" role="status" aria-live="polite" data-toasts>
+            {% for category, message in others %}
+                <div class="toast toast-{{ category }}" data-toast>
+                    <span class="toast-dot" aria-hidden="true">
+                        {% if category == 'success' %}<i class="fa-solid fa-check"></i>{% elif category == 'error' %}<i class="fa-solid fa-exclamation"></i>{% else %}<i class="fa-solid fa-info"></i>{% endif %}
+                    </span>
+                    <span class="flex-1">{{ message }}</span>
+                    <button type="button" class="btn btn-ghost btn-icon btn-sm" data-toast-close aria-label="Sluiten"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+{% endmacro %}
+
+{#-
+    Inline feedback for the previous answer. The server flashes
+    "Correct! q = a" or "Fout! q = a (jij antwoordde: x)" as plain text;
+    Jinja's autoescaping handles HTML in the parts.
+-#}
+{% macro answer_feedback(combo=0) %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages if message.startswith(('Correct! ', 'Fout! ')) %}
+        {% if message.startswith('Correct! ') %}
+            {% set pair = message[9:].split(' = ', 1) %}
+            <div class="feedback feedback-success relative" role="status" aria-live="polite" data-feedback="success">
+                <span class="xp-float" aria-hidden="true" data-xp-float>+{{ XP_CORRECT|default(10) }} XP</span>
+                <span class="feedback-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+                <div class="feedback-text min-w-0">
+                    <p class="font-semibold text-success flex flex-wrap items-center gap-x-2 gap-y-1">
+                        Goed zo!
+                        {% if combo >= 5 %}<span class="combo-bonus" data-combo-bonus><i class="fa-solid fa-bolt"></i> Combo bonus!</span>{% endif %}
+                    </p>
+                    <p class="break-words">
+                        <span class="font-serif">{{ pair[0] }}</span>
+                        {% if pair|length > 1 %}<span class="text-subtle mx-1">=</span><strong class="font-serif">{{ pair[1] }}</strong>{% endif %}
+                    </p>
+                </div>
+            </div>
+        {% else %}
+            {% set body = message[6:] %}
+            {% set split = body.rsplit(' (jij antwoordde: ', 1) %}
+            {% set pair = split[0].split(' = ', 1) %}
+            {% set yours = split[1][:-1] if split|length > 1 and split[1].endswith(')') else (split[1] if split|length > 1 else '') %}
+            <div class="feedback feedback-error" role="alert" data-feedback="error">
+                <span class="feedback-icon" aria-hidden="true"><i class="fa-solid fa-xmark"></i></span>
+                <div class="feedback-text min-w-0">
+                    <p class="font-semibold text-danger">Niet helemaal</p>
+                    <p class="break-words">
+                        <span class="font-serif">{{ pair[0] }}</span>
+                        {% if pair|length > 1 %}<span class="text-subtle mx-1">=</span><strong class="font-serif">{{ pair[1] }}</strong>{% endif %}
+                    </p>
+                    {% if yours %}
+                        <p class="text-sm text-muted mt-1 break-words">Jouw antwoord: <s class="decoration-danger/60">{{ yours }}</s></p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endwith %}
+{% endmacro %}
+
+{#- Quiz page header with title, sound toggle and stop link. -#}
+{% macro quiz_header(eyebrow, title, stop_url) %}
+<div class="flex items-center justify-between gap-2">
+    <div class="min-w-0">
+        <p class="eyebrow mb-0.5">{{ eyebrow }}</p>
+        <h1 class="text-lg sm:text-xl truncate" title="{{ title }}">{{ title }}</h1>
+    </div>
+    <div class="flex items-center gap-1 shrink-0">
+        <button type="button" class="btn btn-ghost btn-icon sound-toggle" data-sound-toggle aria-pressed="false" aria-label="Geluid aan of uit" title="Geluid aan/uit">
+            <span class="icon-on"><i class="fa-solid fa-volume-high"></i></span>
+            <span class="icon-off"><i class="fa-solid fa-volume-xmark"></i></span>
+        </button>
+        <a href="{{ stop_url }}" class="btn btn-ghost btn-sm" data-quiz-stop>
+            <i class="fa-solid fa-xmark"></i> <span>Stop<span class="hidden sm:inline"> oefening</span></span>
+        </a>
+    </div>
+</div>
+{% endmacro %}
+
+{#- Daily goal + streak HUD. -#}
+{% macro hud() %}
+{% set p = game_profile() if game_profile is defined else none %}
+{% if p %}
+<div class="quiz-hud" data-quiz-hud>
+    <div class="flex items-center gap-2.5 min-w-0 flex-1" title="Dagdoel: {{ p.daily_goal }} goede antwoorden">
+        <span class="quiz-hud-icon{% if p.today_correct >= p.daily_goal %} is-done{% endif %}" aria-hidden="true"><i class="fa-solid fa-bullseye"></i></span>
+        <div class="min-w-0 flex-1">
+            <p class="text-xs text-muted leading-none mb-1.5"><span class="font-semibold text-ink tabular-nums">{{ p.today_correct }}/{{ p.daily_goal }}</span> vandaag</p>
+            <div class="progress h-1.5" role="progressbar" aria-label="Dagdoel" aria-valuemin="0" aria-valuemax="{{ p.daily_goal }}" aria-valuenow="{{ p.today_correct }}">
+                <span style="width: {{ p.daily_pct }}%; background: var(--success);"></span>
+            </div>
+        </div>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0 text-sm font-semibold tabular-nums{% if p.streak > 0 %} text-warning{% else %} text-subtle{% endif %}" title="{{ p.streak }} dag{% if p.streak != 1 %}en{% endif %} op rij">
+        <i class="fa-solid fa-fire"></i> {{ p.streak }}<span class="sr-only"> dagen op rij</span>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{#-
+    Side column of a question page: HUD, progress, feedback and keyboard hints.
+    Below lg it is display: contents, so its children flow like before.
+-#}
+{% macro quiz_aside(progress, combo=0) %}
+<div class="quiz-aside">
+    {{ hud() }}
+    <div class="quiz-panel">{{ question_progress(progress, combo) }}</div>
+    {{ answer_feedback(combo) }}
+    <div class="quiz-keys" aria-hidden="true">
+        <p class="eyebrow mb-3">Sneltoetsen</p>
+        <dl class="flex flex-col gap-2.5 text-sm">
+            <div class="flex items-center justify-between gap-3"><dt class="text-muted">Controleren</dt><dd><span class="kbd">Enter</span></dd></div>
+            <div class="flex items-center justify-between gap-3"><dt class="text-muted">Naar invoerveld</dt><dd><span class="kbd">Esc</span></dd></div>
+        </dl>
+    </div>
+</div>
+{% endmacro %}
+
+{#- Progress header for a question. progress is a string like "3/10". -#}
+{% macro question_progress(progress, combo=0) %}
+{% set parts = (progress or '0/0').split('/') %}
+{% set current = parts[0]|int %}
+{% set total = (parts[1] if parts|length > 1 else parts[0])|int %}
+{% set done = ((current - 1) / total * 100) if total > 0 else 0 %}
+<div class="flex flex-col gap-2" data-progress data-current="{{ current }}" data-total="{{ total }}">
+    <div class="flex items-center justify-between text-sm">
+        <span class="font-semibold text-ink">Vraag <span class="tabular-nums">{{ current }}</span> <span class="text-muted font-normal">van <span class="tabular-nums">{{ total }}</span></span></span>
+        <span class="flex items-center gap-2">
+            {% set heat = 4 if combo >= 10 else (3 if combo >= 5 else (2 if combo >= 3 else 1)) %}
+            <span class="combo" data-combo="{{ combo }}" data-heat="{{ heat }}"{% if combo < 2 %} hidden{% endif %} aria-label="Combo van {{ combo }} goed op rij">
+                <i class="fa-solid fa-fire"></i> Combo <span class="tabular-nums">×{{ combo }}</span>
+            </span>
+            <span class="combo combo-broken" data-combo-break hidden aria-hidden="true"></span>
+            <span class="text-subtle tabular-nums">{{ "%.0f"|format(done) }}%</span>
+        </span>
+    </div>
+    <div class="progress" role="progressbar" aria-label="Voortgang" aria-valuemin="0" aria-valuemax="{{ total }}" aria-valuenow="{{ current - 1 }}">
+        <span style="width: {{ "%.2f"|format(done) }}%" data-progress-bar></span>
+    </div>
+</div>
+{% endmacro %}
+
+{#- Answer form body (shared by single-list and mixed quiz). -#}
+{% macro answer_form(form, action, entry, direction, placeholder='Typ je antwoord...') %}
+<form method="POST" action="{{ action }}" class="quiz-form flex flex-col gap-3 xl:grid xl:grid-cols-[minmax(0,1fr)_auto]" data-answer-form novalidate>
+    {{ form.hidden_tag() }}
+    <input type="hidden" name="entry_id" value="{{ entry.id }}">
+    <input type="hidden" name="direction" value="{{ direction }}">
+    <label for="{{ form.answer.id }}" class="sr-only">Jouw antwoord</label>
+    {{ form.answer(class="answer-input", autofocus=True, autocomplete="off", autocorrect="off", autocapitalize="off", spellcheck="false", enterkeyhint="send", placeholder=placeholder, data_answer_input=True) }}
+    {% if form.answer.errors %}
+        <p class="field-error justify-center xl:col-span-full xl:row-start-2"><i class="fa-solid fa-circle-exclamation"></i> {{ form.answer.errors[0] }}</p>
+    {% endif %}
+    <button type="submit" class="btn btn-primary btn-lg btn-block xl:w-auto xl:min-w-48 xl:px-8" data-answer-submit disabled>
+        <i class="fa-solid fa-check"></i> Controleer
+    </button>
+    <p class="hidden sm:flex lg:hidden items-center justify-center gap-1.5 text-xs text-subtle">
+        Druk op <span class="kbd">Enter</span> om te controleren
+    </p>
+</form>
+{% endmacro %}
+
+{#- Result ring + score. -#}
+{#- mistakes: wrong attempts that were asked again; they count against the score. -#}
+{% macro result_summary(score, total, mistakes=0) %}
+{% set attempts = score + mistakes %}
+{% set pct = ((score / attempts * 100) if attempts > 0 else 0) %}
+{% set pct_int = pct|round|int %}
+{% set band = 'perfect' if total > 0 and score == total and mistakes == 0 else ('good' if pct >= 80 else ('ok' if pct >= 50 else 'low')) %}
+<div class="flex flex-col items-center text-center gap-5" data-quiz-result data-score="{{ score }}" data-total="{{ total }}" data-percent="{{ pct_int }}" data-band="{{ band }}">
+    <div class="score-ring" style="--value: {{ pct_int }}; --ring-color: {% if pct >= 80 %}var(--success){% elif pct >= 50 %}var(--warning){% else %}var(--danger){% endif %};" data-ring role="img" aria-label="Score {{ pct_int }} procent">
+        <div class="flex flex-col items-center">
+            <span class="font-serif text-5xl font-semibold tabular-nums tracking-tight leading-none" data-count-to="{{ pct_int }}" data-count-suffix="%">{{ pct_int }}%</span>
+            <span class="text-sm text-muted mt-2 tabular-nums">{{ score }} van {{ total }} goed</span>
+            {% if mistakes %}<span class="text-xs text-subtle mt-1 tabular-nums">{{ mistakes }} {{ 'fout' if mistakes == 1 else 'fouten' }} onderweg</span>{% endif %}
+        </div>
+    </div>
+    <div>
+        {% if band == 'perfect' %}
+            <h2 class="text-2xl sm:text-3xl">Foutloos!</h2>
+            <p class="text-muted mt-2">Alle woorden goed. Perfectum est.</p>
+        {% elif band == 'good' %}
+            <h2 class="text-2xl sm:text-3xl">Goed gedaan!</h2>
+            <p class="text-muted mt-2">Je beheerst deze woorden al aardig. Nog even en het zit erin.</p>
+        {% elif band == 'ok' %}
+            <h2 class="text-2xl sm:text-3xl">Op de goede weg</h2>
+            <p class="text-muted mt-2">Nog even oefenen, dan blijft het hangen.</p>
+        {% else %}
+            <h2 class="text-2xl sm:text-3xl">Blijf oefenen</h2>
+            <p class="text-muted mt-2">Herhaling is de moeder van alle kennis. Het komt goed!</p>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{#-
+    Reward sequence after a finished quiz. Rendered in its final state so it
+    works without JS; quiz.js rewinds and plays it as a skippable sequence.
+-#}
+{% macro rewards_panel(rewards) %}
+{% if rewards and rewards.profile %}
+{% set p = rewards.profile %}
+<section class="card card-pad flex flex-col gap-6" aria-labelledby="rewards-title"
+         data-rewards
+         data-xp="{{ rewards.xp_gained }}"
+         data-level="{{ p.level }}"
+         data-level-before="{{ rewards.level_before }}"
+         data-leveled-up="{{ 'true' if rewards.leveled_up else 'false' }}"
+         data-level-pct="{{ p.level_pct }}"
+         data-xp-into="{{ p.xp_into_level }}"
+         data-xp-for="{{ p.xp_for_level }}"
+         data-xp-total="{{ p.xp }}"
+         data-daily-pct="{{ p.daily_pct }}"
+         data-streak-extended="{{ 'true' if rewards.streak_extended else 'false' }}">
+    <div class="flex items-end justify-between gap-3">
+        <div>
+            <p class="eyebrow mb-1" id="rewards-title">Beloning</p>
+            <p class="font-serif text-4xl font-semibold tracking-tight text-primary leading-none">
+                +<span class="tabular-nums" data-xp-count>{{ rewards.xp_gained }}</span> <span class="text-2xl">XP</span>
+            </p>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" data-rewards-skip hidden>Overslaan <i class="fa-solid fa-forward"></i></button>
+    </div>
+
+    {# Level #}
+    <div class="flex flex-col gap-3" data-reward-step>
+        <div class="flex items-center gap-3">
+            <span class="level-medal" aria-hidden="true"><span class="tabular-nums" data-level-num>{{ p.level }}</span></span>
+            <div class="min-w-0 flex-1">
+                <p class="font-semibold leading-tight">Level <span class="tabular-nums" data-level-label>{{ p.level }}</span> · <span class="font-serif" data-level-title>{{ p.title }}</span></p>
+                <p class="text-sm text-muted tabular-nums">{{ p.xp_into_level }}/{{ p.xp_for_level }} XP · nog {{ p.xp_for_level - p.xp_into_level }} tot <span class="font-serif">{{ p.next_title }}</span></p>
+            </div>
+        </div>
+        <div class="progress h-3" role="progressbar" aria-label="Voortgang naar volgend level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ p.level_pct }}">
+            <span style="width: {{ p.level_pct }}%" data-level-bar></span>
+        </div>
+        {% if rewards.leveled_up %}
+            <div class="levelup" data-levelup role="status">
+                <span class="levelup-icon" aria-hidden="true"><i class="fa-solid fa-angles-up"></i></span>
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] opacity-80">Level omhoog!</p>
+                    <p class="font-serif text-xl font-semibold leading-tight">Je bent nu {{ p.title }}</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {# Streak + daily goal #}
+    <div class="grid grid-cols-2 gap-3" data-reward-step>
+        <div class="reward-tile">
+            <span class="text-2xl" aria-hidden="true">🔥</span>
+            <p class="font-semibold leading-tight"><span class="tabular-nums">{{ p.streak }}</span> dag{% if p.streak != 1 %}en{% endif %} op rij</p>
+            {% if rewards.streak_extended %}<span class="badge badge-warning" data-streak-pop>verlengd!</span>{% endif %}
+        </div>
+        <div class="reward-tile">
+            <span class="text-2xl text-success" aria-hidden="true"><i class="fa-solid fa-bullseye"></i></span>
+            <p class="font-semibold leading-tight"><span class="tabular-nums">{{ p.today_correct }}/{{ p.daily_goal }}</span> vandaag</p>
+            <div class="progress h-1.5 w-full" role="progressbar" aria-label="Dagdoel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ p.daily_pct }}">
+                <span style="width: {{ p.daily_pct }}%; background: var(--success);" data-daily-bar></span>
+            </div>
+            {% if p.today_correct >= p.daily_goal %}<span class="badge badge-success">Dagdoel gehaald</span>{% endif %}
+        </div>
+    </div>
+
+    {# Achievements #}
+    {% if rewards.new_achievements %}
+        <div class="flex flex-col gap-3" data-reward-step>
+            {% for a in rewards.new_achievements %}
+                <div class="achievement-new" data-achievement>
+                    <span class="achievement-medal" aria-hidden="true"><i class="fa-solid fa-{{ a.icon }}"></i></span>
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Nieuwe prestatie!</p>
+                        <p class="font-serif text-lg font-semibold leading-tight">{{ a.title }}</p>
+                        <p class="text-sm text-muted">{{ a.description }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <a href="{{ url_for('main.profile') }}" class="btn btn-secondary self-start" data-reward-step>
+        <i class="fa-solid fa-user"></i> Bekijk profiel
+    </a>
+</section>
+{% endif %}
+{% endmacro %}

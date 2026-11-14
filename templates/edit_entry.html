@@ -1,50 +1,113 @@
 {% extends "base.html" %}
 
-{% block title %}Item Bewerken - {{ word_list.name }}{% endblock %}
+{% block title %}Item bewerken - {{ word_list.name }}{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h2>Item Bewerken</h2>
-    <p class="subtitle">{{ word_list.name }} - {{ word_list.source_language.name }} → {{ word_list.target_language.name }}</p>
+{% from "_game.html" import mastery_stars %}
+{% macro control(field) -%}
+    {%- set attrs = dict(kwargs) -%}
+    {%- if field.errors %}{% set _ = attrs.update({'aria-invalid': 'true', 'aria-describedby': field.id ~ '-error'}) %}{% endif -%}
+    {{ field(**attrs) }}
+{%- endmacro %}
 
-    <form method="POST" action="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="form">
+{% macro errors(field) -%}
+    {% if field.errors %}
+        <p class="field-error" id="{{ field.id }}-error"><i class="fa-solid fa-circle-exclamation"></i> {{ field.errors[0] }}</p>
+    {% endif %}
+{%- endmacro %}
+
+<div class="max-w-2xl mx-auto lg:max-w-none lg:mx-0">
+    <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> {{ word_list.name }}</a>
+
+    <header class="mb-8">
+        <p class="eyebrow">Item bewerken</p>
+        <h1 class="page-title break-words">{{ entry.source_word }}</h1>
+        <p class="page-subtitle flex flex-wrap items-center gap-2">
+            <span class="badge badge-primary">
+                {{ word_list.source_language.name }}
+                <i class="fa-solid fa-arrow-right-long text-[0.65rem]"></i>
+                {{ word_list.target_language.name }}
+            </span>
+            {% set attempts = (entry.correct_count or 0) + (entry.incorrect_count or 0) %}
+            {% if attempts > 0 %}
+                <span class="badge badge-success tabular-nums lg:hidden"><i class="fa-solid fa-check text-[0.65rem]"></i> {{ entry.correct_count or 0 }} goed</span>
+                <span class="badge badge-danger tabular-nums lg:hidden"><i class="fa-solid fa-xmark text-[0.65rem]"></i> {{ entry.incorrect_count or 0 }} fout</span>
+            {% endif %}
+        </p>
+    </header>
+
+    <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-8 lg:items-start xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-10">
+    <form method="POST" action="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="card card-pad grid gap-5 sm:grid-cols-2" novalidate>
         {{ form.hidden_tag() }}
-        <div class="form-group">
+
+        <div class="field{% if form.source_word.errors %} has-error{% endif %}">
+            <label for="source_word">{{ word_list.source_language.name }}</label>
+            {{ control(form.source_word, autocomplete="off", autocapitalize="off", spellcheck="false", lang=word_list.source_language.code) }}
+            {{ errors(form.source_word) }}
+        </div>
+
+        <div class="field{% if form.target_word.errors %} has-error{% endif %}">
+            <label for="target_word">{{ word_list.target_language.name }}</label>
+            {{ control(form.target_word, autocomplete="off", autocapitalize="off", spellcheck="false", lang=word_list.target_language.code) }}
+            {{ errors(form.target_word) }}
+        </div>
+
+        <div class="field{% if form.entry_type.errors %} has-error{% endif %}">
             {{ form.entry_type.label }}
-            {{ form.entry_type(class="form-control") }}
-            {% if form.entry_type.errors %}
-                <span class="error">{{ form.entry_type.errors[0] }}</span>
-            {% endif %}
+            {{ control(form.entry_type) }}
+            {{ errors(form.entry_type) }}
         </div>
 
-        <div class="form-group">
-            <label for="source_word">{{ word_list.source_language.name }}:</label>
-            {{ form.source_word(class="form-control") }}
-            {% if form.source_word.errors %}
-                <span class="error">{{ form.source_word.errors[0] }}</span>
-            {% endif %}
-        </div>
-
-        <div class="form-group">
-            <label for="target_word">{{ word_list.target_language.name }}:</label>
-            {{ form.target_word(class="form-control") }}
-            {% if form.target_word.errors %}
-                <span class="error">{{ form.target_word.errors[0] }}</span>
-            {% endif %}
-        </div>
-
-        <div class="form-group">
+        <div class="field{% if form.pronunciation_note.errors %} has-error{% endif %}">
             {{ form.pronunciation_note.label }}
-            {{ form.pronunciation_note(class="form-control") }}
-            {% if form.pronunciation_note.errors %}
-                <span class="error">{{ form.pronunciation_note.errors[0] }}</span>
-            {% endif %}
+            {{ control(form.pronunciation_note, autocomplete="off", placeholder="Bijv. klemtoon op de eerste lettergreep") }}
+            {{ errors(form.pronunciation_note) }}
         </div>
 
-        <div class="form-actions">
-            {{ form.submit(class="btn btn-primary") }}
-            <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary">Annuleren</a>
+        <div class="sm:col-span-2 flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+            <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-ghost">Annuleren</a>
+            <button type="submit" name="submit" value="Bijwerken" class="btn btn-primary sm:min-w-44"><i class="fa-solid fa-check"></i> Opslaan</button>
         </div>
     </form>
+
+    {#- Desktop side panel: how this word is doing, and where to go next. -#}
+    {% set correct = entry.correct_count or 0 %}
+    {% set wrong = entry.incorrect_count or 0 %}
+    <aside class="form-aside hidden lg:flex" aria-labelledby="entry-stats-title">
+        <div class="flex items-center justify-between gap-3">
+            <h2 id="entry-stats-title" class="form-aside-title">Voortgang</h2>
+            {{ mastery_stars(entry) }}
+        </div>
+        {% if attempts > 0 %}
+            {% set acc = (correct / attempts * 100)|round|int %}
+            <div class="form-facts">
+                <div class="form-fact">
+                    <span class="form-fact-value text-success">{{ correct }}</span>
+                    <span class="form-fact-label">keer goed</span>
+                </div>
+                <div class="form-fact">
+                    <span class="form-fact-value text-danger">{{ wrong }}</span>
+                    <span class="form-fact-label">keer fout</span>
+                </div>
+            </div>
+            <div>
+                <div class="flex justify-between text-xs mb-1.5">
+                    <span>Trefzekerheid</span>
+                    <span class="font-semibold text-ink tabular-nums">{{ acc }}%</span>
+                </div>
+                <div class="progress" role="progressbar" aria-label="Trefzekerheid" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ acc }}">
+                    <span style="width: {{ acc }}%"></span>
+                </div>
+            </div>
+        {% else %}
+            <p class="leading-relaxed">Dit woord is nog niet geoefend. Na een quiz zie je hier hoe vaak je het goed had.</p>
+        {% endif %}
+        <p class="form-tip"><strong class="text-ink">Tip:</strong> een uitspraaknotitie staat naast het woord in je overzichten, handig voor lastige klemtonen.</p>
+        <nav class="form-links" aria-label="Verder">
+            <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}"><i class="fa-solid fa-layer-group"></i> Naar de lijst <i class="fa-solid fa-chevron-right"></i></a>
+            <a href="{{ url_for('main.quiz_start', list_id=word_list.id) }}"><i class="fa-solid fa-play"></i> Oefen deze lijst <i class="fa-solid fa-chevron-right"></i></a>
+        </nav>
+    </aside>
+    </div>
 </div>
 {% endblock %}

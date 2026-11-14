@@ -1,50 +1,170 @@
+{%- macro nav_active(endpoints) -%}
+    {%- if request.endpoint in endpoints %} aria-current="page"{% endif -%}
+{%- endmacro -%}
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="nl" class="no-js">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f6f3ec" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#13110f" media="(prefers-color-scheme: dark)">
     <title>{% block title %}Magistra{% endblock %}</title>
+    <script>
+        // Set the theme before first paint to avoid a flash of the wrong theme.
+        (function () {
+            var root = document.documentElement;
+            root.classList.remove('no-js');
+            root.classList.add('js');
+            var stored = null;
+            try { stored = localStorage.getItem('magistra-theme'); } catch (e) {}
+            var dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            root.dataset.theme = dark ? 'dark' : 'light';
+        })();
+    </script>
     {% for css in vite_css('main.js') %}
     <link rel="stylesheet" href="{{ css }}">
     {% endfor %}
     <script type="module" src="{{ vite_asset('main.js') }}"></script>
 </head>
-<body>
-    <nav>
-        <div class="container mx-auto flex justify-between">
-            <div class="nav-left">
-                <a class="font-bold" href="{{ url_for('main.index') }}">MAGISTRA</a>
-                <a href="{{ url_for('main.index') }}" class="nav-link"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
-                <a href="{{ url_for('main.all_entries') }}" class="nav-link"><i class="fa-solid fa-book"></i> Alle Woordjes</a>
-                <a href="{{ url_for('main.quiz_history') }}" class="nav-link"><i class="fa-solid fa-clock-rotate-left"></i> Geschiedenis</a>
-                <a href="{{ url_for('main.smart_practice') }}" class="nav-link"><i class="fa-solid fa-brain"></i> Smart Practice</a>
-            </div>
-            <div class="flex items-center gap-4">
-                <a href="{{ url_for('main.new_list') }}" class="btn btn-primary">
-                    <i class="fa-solid fa-plus"></i> Nieuwe Lijst
+<body data-page="{{ request.endpoint|replace('main.', '') if request.endpoint else '' }}">
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 btn btn-secondary">Naar inhoud</a>
+
+    {% set gp = game_profile() %}
+    <header class="topbar lg:hidden">
+        <div class="shell flex h-16 items-center justify-between gap-4">
+            <a class="brand" href="{{ url_for('main.index') }}" aria-label="Magistra, naar dashboard">
+                <span class="brand-mark" aria-hidden="true">M</span>
+                <span>Magistra</span>
+            </a>
+
+            <div class="flex items-center gap-2">
+                {% if gp %}
+                <a href="{{ url_for('main.profile') }}" class="hud" data-hud{{ nav_active(['main.profile']) }}
+                   aria-label="Level {{ gp.level }} {{ gp.title }}, {{ gp.streak }} {{ 'dag' if gp.streak == 1 else 'dagen' }} streak{% if not gp.practiced_today %}, vandaag nog niet geoefend{% endif %}. Naar je profiel">
+                    <span class="hud-streak{% if gp.practiced_today %} is-lit{% endif %}" aria-hidden="true">
+                        <i class="fa-solid fa-fire"></i><span>{{ gp.streak }}</span>
+                    </span>
+                    <span class="hud-level" aria-hidden="true">
+                        <span class="mini-ring" style="--value: {{ gp.level_pct }};"><span>{{ gp.level }}</span></span>
+                    </span>
+                </a>
+                {% endif %}
+                <button type="button" class="btn btn-ghost btn-icon theme-toggle" data-theme-toggle aria-label="Wissel tussen licht en donker thema">
+                    <span class="icon-sun"><i class="fa-solid fa-sun"></i></span>
+                    <span class="icon-moon"><i class="fa-solid fa-moon"></i></span>
+                </button>
+                <a href="{{ url_for('main.new_list') }}" class="btn btn-primary btn-sm sm:min-h-10 sm:px-4" aria-label="Nieuwe lijst">
+                    <i class="fa-solid fa-plus"></i><span class="hidden sm:inline">Nieuwe lijst</span>
                 </a>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <main class="flex-1 py-8">
-        <div class="container mx-auto">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
+    <aside class="sidebar" aria-label="Zijbalk">
+        <a class="brand px-2" href="{{ url_for('main.index') }}" aria-label="Magistra, naar dashboard">
+            <span class="brand-mark" aria-hidden="true">M</span>
+            <span>Magistra</span>
+        </a>
+
+        <a href="{{ url_for('main.new_list') }}" class="btn btn-primary btn-block mt-7"><i class="fa-solid fa-plus"></i> Nieuwe lijst</a>
+
+        <nav class="mt-6 flex flex-col gap-1" aria-label="Hoofdnavigatie">
+            <a href="{{ url_for('main.index') }}" class="side-link"{{ nav_active(['main.index', 'main.list_detail', 'main.new_list', 'main.edit_entry', 'main.edit_list']) }}><i class="fa-solid fa-layer-group fa-fw"></i> Lijsten</a>
+            <a href="{{ url_for('main.all_entries') }}" class="side-link"{{ nav_active(['main.all_entries']) }}><i class="fa-solid fa-book-open fa-fw"></i> Woordjes</a>
+            {% if smart_practice_ready() %}
+            <a href="{{ url_for('main.smart_practice') }}" class="side-link"{{ nav_active(['main.smart_practice', 'main.smart_practice_list']) }}><i class="fa-solid fa-brain fa-fw"></i> Smart Practice</a>
+            {% else %}
+            <span class="side-link" aria-disabled="true" title="Beschikbaar zodra je woorden minstens twee keer hebt geoefend"><i class="fa-solid fa-brain fa-fw"></i> Smart Practice <i class="fa-solid fa-lock ml-auto text-xs"></i></span>
+            {% endif %}
+            <a href="{{ url_for('main.mixed_quiz') }}" class="side-link"{{ nav_active(['main.mixed_quiz']) }}><i class="fa-solid fa-shuffle fa-fw"></i> Gemengde quiz</a>
+            <a href="{{ url_for('main.quiz_history') }}" class="side-link"{{ nav_active(['main.quiz_history', 'main.quiz_history_detail']) }}><i class="fa-solid fa-chart-line fa-fw"></i> Geschiedenis</a>
+            <a href="{{ url_for('main.profile') }}" class="side-link"{{ nav_active(['main.profile']) }}><i class="fa-solid fa-trophy fa-fw"></i> Profiel</a>
+        </nav>
+
+        <div class="mt-auto flex flex-col gap-3 pt-6">
+            {% if gp %}
+            <a href="{{ url_for('main.profile') }}" class="player-card" data-hud
+               aria-label="Level {{ gp.level }} {{ gp.title }}, {{ gp.xp_into_level }} van {{ gp.xp_for_level }} XP, {{ gp.streak }} {{ 'dag' if gp.streak == 1 else 'dagen' }} streak, dagdoel {{ gp.today_correct }} van {{ gp.daily_goal }}. Naar je profiel">
+                <span class="flex items-center gap-3" aria-hidden="true">
+                    <span class="mini-ring" style="--value: {{ gp.level_pct }};"><span>{{ gp.level }}</span></span>
+                    <span class="min-w-0 flex-1 leading-tight">
+                        <span class="block text-sm font-semibold">Level {{ gp.level }}</span>
+                        <span class="block font-serif italic text-sm text-muted truncate">{{ gp.title }}</span>
+                    </span>
+                    <span class="hud-streak{% if gp.practiced_today %} is-lit{% endif %}"><i class="fa-solid fa-fire"></i><span>{{ gp.streak }}</span></span>
+                </span>
+                <span class="flex flex-col gap-1.5" aria-hidden="true">
+                    <span class="flex justify-between text-xs text-subtle tabular-nums"><span>XP</span><span>{{ gp.xp_into_level }}/{{ gp.xp_for_level }}</span></span>
+                    <span class="progress h-1.5"><span style="width: {{ gp.level_pct }}%"></span></span>
+                </span>
+                <span class="flex flex-col gap-1.5" aria-hidden="true">
+                    <span class="flex justify-between text-xs text-subtle tabular-nums"><span>Dagdoel</span><span>{{ gp.today_correct }}/{{ gp.daily_goal }}</span></span>
+                    <span class="progress progress-goal h-1.5{% if gp.daily_done %} is-done{% endif %}"><span style="width: {{ gp.daily_pct }}%"></span></span>
+                </span>
+            </a>
+            {% endif %}
+            <div class="flex items-center justify-between gap-2 px-2">
+                <span class="font-serif italic text-xs text-subtle">Repetitio mater studiorum.</span>
+                <button type="button" class="btn btn-ghost btn-icon btn-sm theme-toggle" data-theme-toggle aria-label="Wissel tussen licht en donker thema">
+                    <span class="icon-sun"><i class="fa-solid fa-sun"></i></span>
+                    <span class="icon-moon"><i class="fa-solid fa-moon"></i></span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    {% block flashes %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="toasts" role="status" aria-live="polite" data-toasts>
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                        <div class="toast toast-{{ category }}" data-toast>
+                            <span class="toast-dot" aria-hidden="true">
+                                {% if category == 'success' %}<i class="fa-solid fa-check"></i>{% elif category == 'error' %}<i class="fa-solid fa-exclamation"></i>{% else %}<i class="fa-solid fa-info"></i>{% endif %}
+                            </span>
+                            <span class="flex-1">{{ message }}</span>
+                            <button type="button" class="btn btn-ghost btn-icon btn-sm" data-toast-close aria-label="Sluiten"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
                     {% endfor %}
-                {% endif %}
-            {% endwith %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    {% endblock %}
 
+    <main id="main" class="flex-1 pt-6 pb-28 sm:pt-10 lg:pt-12 lg:pb-16">
+        <div class="shell">
             {% block content %}{% endblock %}
         </div>
     </main>
 
-    <footer class="bg-gray-800 text-gray-400 py-6 text-center mt-12">
-        <div class="container mx-auto">
-            <p class="m-0">Magistra - Woordjes oefenen</p>
+    <nav class="tabbar" aria-label="Hoofdnavigatie">
+        <div class="flex">
+            <a href="{{ url_for('main.index') }}" class="tab"{{ nav_active(['main.index', 'main.list_detail', 'main.new_list', 'main.edit_entry', 'main.edit_list']) }}><i class="fa-solid fa-layer-group"></i>Lijsten</a>
+            <a href="{{ url_for('main.all_entries') }}" class="tab"{{ nav_active(['main.all_entries']) }}><i class="fa-solid fa-book-open"></i>Woordjes</a>
+            {% if smart_practice_ready() %}
+            <a href="{{ url_for('main.smart_practice') }}" class="tab"{{ nav_active(['main.smart_practice', 'main.smart_practice_list']) }}><i class="fa-solid fa-brain"></i>Oefenen</a>
+            {% else %}
+            <span class="tab" aria-disabled="true" title="Beschikbaar zodra je woorden minstens twee keer hebt geoefend"><i class="fa-solid fa-brain"></i>Oefenen</span>
+            {% endif %}
+            <a href="{{ url_for('main.quiz_history') }}" class="tab"{{ nav_active(['main.quiz_history', 'main.quiz_history_detail']) }}><i class="fa-solid fa-chart-line"></i>Historie</a>
         </div>
-    </footer>
+    </nav>
+
+    <dialog class="dialog" data-confirm-dialog aria-labelledby="confirm-title">
+        <form method="dialog" class="p-6 flex flex-col gap-5">
+            <div class="flex items-start gap-4">
+                <span class="grid place-items-center size-11 shrink-0 rounded-2xl bg-danger-soft text-danger"><i class="fa-solid fa-trash-can"></i></span>
+                <div>
+                    <h2 id="confirm-title" class="text-lg">Weet je het zeker?</h2>
+                    <p class="text-sm text-muted mt-1" data-confirm-message></p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button value="cancel" class="btn btn-secondary">Annuleren</button>
+                <button value="confirm" class="btn btn-primary" style="background: var(--danger); color: #fff;" data-confirm-ok>Verwijderen</button>
+            </div>
+        </form>
+    </dialog>
 </body>
 </html>

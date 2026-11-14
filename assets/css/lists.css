@@ -1,0 +1,169 @@
+/* Page-specific styles for the lists pages. Prefer Tailwind utilities and shared components in style.css. */
+@layer components {
+    /* List cards on the dashboard: the whole card is clickable via a stretched title link. */
+    .list-card {
+        @apply relative flex flex-col p-5 sm:p-6;
+        transition: transform 0.25s cubic-bezier(.2, .8, .2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    .list-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--border-strong);
+    }
+
+    .list-card:has(.list-card-link:focus-visible) {
+        box-shadow: 0 0 0 4px var(--ring);
+        border-color: var(--primary);
+    }
+
+    .list-card-link {
+        @apply text-ink no-underline;
+    }
+
+    /* Balanced wrapping splits short titles awkwardly ("to / walk"). */
+    .list-card h2 {
+        text-wrap: pretty;
+    }
+
+    .list-card-link:focus-visible {
+        outline: none;
+    }
+
+    .list-card-link::after {
+        content: "";
+        @apply absolute inset-0 rounded-2xl;
+    }
+
+    /* Pronunciation hint */
+    .badge-pron {
+        @apply bg-info-soft text-info font-medium italic max-w-full;
+    }
+
+    /* Mini correct/incorrect bar on entry rows */
+    .entry-score {
+        @apply inline-flex items-center gap-2 text-xs;
+    }
+
+    .entry-score-bar {
+        @apply block h-1.5 w-14 rounded-full overflow-hidden;
+        background: var(--danger);
+        opacity: 0.9;
+    }
+
+    .entry-score-bar > span {
+        @apply block h-full;
+        background: var(--success);
+    }
+
+    /* Source/target language picker with a swap button in between */
+    .language-pair {
+        @apply grid gap-3 items-start;
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .language-swap {
+        @apply justify-self-center rotate-90;
+    }
+
+    @media (width >= 40rem) {
+        .language-pair {
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        }
+
+        .language-swap {
+            @apply rotate-0;
+            /* Line up with the selects, below the labels. */
+            margin-top: 1.75rem;
+        }
+    }
+
+    /* Sticky search bar on the all-entries page */
+    .search-bar {
+        background: color-mix(in oklab, var(--bg) 85%, transparent);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* Freshly added entry highlight */
+    .entry-row.is-new {
+        border-color: var(--success);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--success) 25%, transparent);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Desktop (lg+): denser overview, two-column list detail              */
+    /* ------------------------------------------------------------------ */
+
+    @media (width >= 64rem) {
+        /* Dashboard: language chips and search on one toolbar row */
+        .lists-toolbar {
+            @apply flex items-center justify-between gap-6 mb-6;
+        }
+
+        .list-card {
+            @apply p-5;
+        }
+
+        .list-card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* A grid of solid red buttons is loud: soft until the card is hovered or focused. */
+        .list-card .btn-primary {
+            background: var(--primary-soft);
+            color: var(--primary);
+            box-shadow: none;
+        }
+
+        .list-card:hover .btn-primary,
+        .list-card:focus-within .btn-primary {
+            background: var(--primary);
+            color: var(--primary-text);
+        }
+
+        /* In the table rows a pronunciation note reads as an inline note, not a pill. */
+        .entry-meta .badge-pron {
+            @apply px-0 py-0.5 rounded-none bg-transparent font-normal;
+            align-items: baseline;
+        }
+
+        .entry-row.is-new {
+            background: color-mix(in oklab, var(--success-soft) 70%, var(--surface));
+            box-shadow: inset 3px 0 0 var(--success);
+        }
+    }
+
+    /* Wide desktop (xl+): four list columns; list detail gets the add-entry panel as an aside. */
+    @media (width >= 80rem) {
+        .grid-cards.list-grid {
+            @apply grid-cols-4;
+        }
+
+        /* List detail: entries left, add-entry panel as a sticky aside */
+        .list-detail-layout {
+            @apply grid items-start gap-8;
+            grid-template-columns: minmax(0, 1fr) 19rem;
+        }
+
+        .add-entry-panel {
+            @apply sticky top-8;
+            order: 2;
+        }
+
+        /* Always open as an aside (see lists.js), so the summary is just a heading. */
+        .add-entry-panel.disclosure > summary {
+            @apply cursor-default px-5 pb-4;
+        }
+
+        .add-entry-panel.disclosure > summary .chevron {
+            display: none;
+        }
+    }
+
+    @media (width >= 90rem) {
+        .list-detail-layout {
+            grid-template-columns: minmax(0, 1fr) 21rem;
+        }
+    }
+}

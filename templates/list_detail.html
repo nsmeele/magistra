@@ -1,87 +1,167 @@
 {% extends "base.html" %}
+{% from "_game.html" import daily_card, mastery_stars %}
 
 {% block title %}{{ word_list.name }} - Magistra{% endblock %}
 
 {% block content %}
-<div class="list-header">
-    <div>
-        <h2>{{ word_list.name }}</h2>
-        <p class="languages">{{ word_list.source_language.name }} → {{ word_list.target_language.name }}</p>
+{% set count = word_list.entries|length %}
+<a href="{{ url_for('main.index') }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Alle lijsten</a>
+
+<header class="page-head lg:max-xl:flex-col lg:max-xl:items-start">
+    <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="badge badge-primary">
+                {{ word_list.source_language.name }}
+                <i class="fa-solid fa-arrow-right-long text-[0.65rem]"></i>
+                {{ word_list.target_language.name }}
+            </span>
+            {% if word_list.category %}
+                <span class="badge"><i class="fa-solid fa-tag text-[0.65rem]"></i> {{ word_list.category.name }}</span>
+            {% endif %}
+        </div>
+        <h1 class="page-title break-words">{{ word_list.name }}</h1>
+        <p class="page-subtitle tabular-nums">{{ count }} item{% if count != 1 %}s{% endif %}</p>
     </div>
-    <div class="header-actions">
+    <div class="flex flex-wrap items-center gap-2 lg:flex-nowrap lg:shrink-0">
         {% if word_list.entries %}
-            <a href="{{ url_for('main.quiz_start', list_id=word_list.id) }}" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Oefening</a>
-            <a href="{{ url_for('main.smart_practice_list', list_id=word_list.id) }}" class="btn btn-secondary"><i class="fa-solid fa-brain"></i> Smart Practice</a>
+            <a href="{{ url_for('main.quiz_start', list_id=word_list.id) }}" class="btn btn-primary flex-1 sm:flex-none"><i class="fa-solid fa-play"></i> Start oefening</a>
+            {% if smart_practice_ready(word_list.id) %}
+            <a href="{{ url_for('main.smart_practice_list', list_id=word_list.id) }}" class="btn btn-secondary flex-1 sm:flex-none"><i class="fa-solid fa-brain"></i> Smart practice</a>
+            {% else %}
+            <span class="btn btn-secondary flex-1 sm:flex-none" aria-disabled="true" title="Beschikbaar zodra je woorden minstens twee keer hebt geoefend"><i class="fa-solid fa-lock"></i> Smart practice</span>
+            {% endif %}
         {% endif %}
-        <form method="POST" action="{{ url_for('main.delete_list', list_id=word_list.id) }}" class="inline">
-            {{ delete_form.hidden_tag() }}
-            {{ delete_form.submit(class="btn btn-danger", onclick="return confirm('Weet je zeker dat je deze lijst wilt verwijderen?')", value="Lijst Verwijderen") }}
-        </form>
     </div>
+</header>
+
+<div class="list-detail-layout">
+<details class="card disclosure mb-8 xl:mb-0 add-entry-panel" id="add-entry" data-add-entry{% if not word_list.entries %} open data-default-open{% endif %}>
+    <summary>
+        <span class="flex items-center gap-3">
+            <span class="grid place-items-center size-9 rounded-xl bg-primary-soft text-primary"><i class="fa-solid fa-plus"></i></span>
+            Woord of zin toevoegen
+        </span>
+        <span class="chevron" aria-hidden="true"><i class="fa-solid fa-chevron-down text-xs"></i></span>
+    </summary>
+    <form method="POST" action="{{ url_for('main.add_entry', list_id=word_list.id) }}" class="px-5 pb-5 sm:px-7 sm:pb-7 grid gap-4 sm:grid-cols-2 xl:px-5 xl:pb-5 xl:grid-cols-1" data-add-entry-form>
+        {{ form.hidden_tag() }}
+        <div class="field">
+            <label for="source_word">{{ word_list.source_language.name }}</label>
+            {{ form.source_word(placeholder="Woord of zin", autocomplete="off", autocapitalize="off", spellcheck="false", required=True) }}
+        </div>
+        <div class="field">
+            <label for="target_word">{{ word_list.target_language.name }}</label>
+            {{ form.target_word(placeholder="Vertaling", autocomplete="off", autocapitalize="off", spellcheck="false", required=True) }}
+        </div>
+        <div class="field">
+            {{ form.entry_type.label }}
+            {{ form.entry_type() }}
+        </div>
+        <div class="field">
+            {{ form.pronunciation_note.label }}
+            {{ form.pronunciation_note(placeholder="Bijv. klemtoon op de eerste lettergreep", autocomplete="off") }}
+        </div>
+        <div class="sm:col-span-2 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between pt-1 xl:col-span-1 xl:flex-col-reverse xl:items-stretch">
+            <p class="help hidden sm:block xl:text-center"><span class="kbd">Enter</span> om toe te voegen</p>
+            <button type="submit" class="btn btn-primary sm:min-w-40"><i class="fa-solid fa-plus"></i> Toevoegen</button>
+        </div>
+    </form>
+</details>
+
+<section aria-labelledby="entries-title" class="min-w-0">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+        <h2 class="section-title mb-0" id="entries-title">
+            Items <span class="badge tabular-nums" data-search-count="entries">{{ count }}</span>
+        </h2>
+        {% if count > 5 %}
+        <div class="search sm:w-72">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="search" class="input" placeholder="Zoek in deze lijst..." aria-label="Zoek in items" data-search="entries" autocomplete="off">
+        </div>
+        {% endif %}
+    </div>
+
+    {% if word_list.entries %}
+        <ul class="entry-list entry-list-scored" id="entries" data-enter-rows>
+            <li class="entry-head" aria-hidden="true">
+                <span>{{ word_list.source_language.name }}</span>
+                <span>{{ word_list.target_language.name }}</span>
+                <span>Details</span>
+                <span>Score</span>
+                <span class="entry-head-actions"></span>
+            </li>
+            {% for entry in word_list.entries %}
+                {% set correct = entry.correct_count or 0 %}
+                {% set wrong = entry.incorrect_count or 0 %}
+                {% set attempts = correct + wrong %}
+                <li class="entry-row" data-search-text="{{ entry.source_word }} {{ entry.target_word }} {{ entry.pronunciation_note or '' }}">
+                    <div class="entry-main min-w-0">
+                        <p class="entry-term" lang="{{ word_list.source_language.code }}">{{ entry.source_word }}</p>
+                        <p class="entry-translation" lang="{{ word_list.target_language.code }}">{{ entry.target_word }}</p>
+                    </div>
+                    <div class="entry-actions row-span-1">
+                        <a href="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="btn btn-ghost btn-icon" aria-label="{{ entry.source_word }} bewerken" title="Bewerken"><i class="fa-solid fa-pen"></i></a>
+                        <form method="POST" action="{{ url_for('main.delete_entry', entry_id=entry.id) }}" data-confirm="&quot;{{ entry.source_word }}&quot; wordt uit deze lijst verwijderd.">
+                            {{ delete_form.hidden_tag() }}
+                            <button type="submit" class="btn btn-ghost btn-icon hover:text-danger" aria-label="{{ entry.source_word }} verwijderen" title="Verwijderen"><i class="fa-solid fa-trash-can"></i></button>
+                        </form>
+                    </div>
+                    <div class="entry-meta col-span-2 lg:col-span-1">
+                        <span class="badge">{{ entry.entry_type | entry_type_label }}</span>
+                        {{ mastery_stars(entry) }}
+                        {% if entry.pronunciation_note %}
+                            <span class="badge badge-pron"><i class="fa-solid fa-volume-low text-[0.65rem]"></i> {{ entry.pronunciation_note }}</span>
+                        {% endif %}
+                        {% if attempts > 0 %}
+                            {% set pct = (correct / attempts * 100)|round|int %}
+                            <span class="entry-score ml-auto lg:hidden" title="{{ correct }} goed, {{ wrong }} fout">
+                                <span class="score-good">{{ correct }}</span>
+                                <span class="entry-score-bar" aria-hidden="true"><span style="width: {{ pct }}%"></span></span>
+                                <span class="score-bad">{{ wrong }}</span>
+                                <span class="sr-only">{{ correct }} keer goed, {{ wrong }} keer fout</span>
+                            </span>
+                        {% else %}
+                            <span class="ml-auto text-xs text-subtle lg:hidden">Nog niet geoefend</span>
+                        {% endif %}
+                    </div>
+                    {#- Desktop: the score gets its own table column. -#}
+                    <div class="entry-score-cell hidden lg:flex">
+                        {% if attempts > 0 %}
+                            <span class="entry-score" title="{{ correct }} goed, {{ wrong }} fout">
+                                <span class="score-good">{{ correct }}</span>
+                                <span class="entry-score-bar" aria-hidden="true"><span style="width: {{ pct }}%"></span></span>
+                                <span class="score-bad">{{ wrong }}</span>
+                                <span class="sr-only">{{ correct }} keer goed, {{ wrong }} keer fout</span>
+                            </span>
+                        {% else %}
+                            <span class="text-xs text-subtle" title="Nog niet geoefend">Nieuw</span>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        <div class="empty mt-2" data-search-empty="entries" hidden>
+            <span class="empty-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <h3 class="text-xl">Niets gevonden</h3>
+            <p class="text-muted max-w-sm">Geen item komt overeen met je zoekterm.</p>
+        </div>
+    {% else %}
+        <div class="empty">
+            <span class="empty-icon"><i class="fa-solid fa-seedling"></i></span>
+            <h3 class="text-xl">Deze lijst is nog leeg</h3>
+            <p class="text-muted max-w-sm">Voeg <span class="xl:hidden">hierboven</span><span class="hidden xl:inline">hiernaast</span> je eerste woord of zin toe. Vanaf één item kun je al oefenen.</p>
+        </div>
+    {% endif %}
+</section>
 </div>
 
-<h3>Woord/Zin Toevoegen</h3>
-<form method="POST" action="{{ url_for('main.add_entry', list_id=word_list.id) }}" class="form inline-form">
-    {{ form.hidden_tag() }}
-    <div class="form-group">
-        {{ form.entry_type.label }}
-        {{ form.entry_type(class="form-control") }}
-    </div>
-    <div class="form-group">
-        <label for="source_word">{{ word_list.source_language.name }}:</label>
-        {{ form.source_word(class="form-control") }}
-    </div>
-    <div class="form-group">
-        <label for="target_word">{{ word_list.target_language.name }}:</label>
-        {{ form.target_word(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.pronunciation_note.label }}
-        {{ form.pronunciation_note(class="form-control") }}
-    </div>
-    {{ form.submit(class="btn btn-primary") }}
-</form>
-
-<h3>Items ({{ word_list.entries|length }})</h3>
-{% if word_list.entries %}
-    <table class="words-table">
-        <thead>
-            <tr>
-                <th>Type</th>
-                <th>{{ word_list.source_language.name }}</th>
-                <th>{{ word_list.target_language.name }}</th>
-                <th>Uitspraak</th>
-                <th>Score</th>
-                <th>Acties</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for entry in word_list.entries %}
-                <tr>
-                    <td>{{ entry.entry_type | entry_type_label }}</td>
-                    <td>{{ entry.source_word }}</td>
-                    <td>{{ entry.target_word }}</td>
-                    <td>{{ entry.pronunciation_note or '-' }}</td>
-                    <td>
-                        {% if entry.correct_count + entry.incorrect_count > 0 %}
-                            <span class="score-good">{{ entry.correct_count }}</span> /
-                            <span class="score-bad">{{ entry.incorrect_count }}</span>
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('main.edit_entry', entry_id=entry.id) }}" class="btn btn-small btn-secondary"><i class="fa-solid fa-pen-to-square"></i></a>
-                        <form method="POST" action="{{ url_for('main.delete_entry', entry_id=entry.id) }}" class="inline">
-                            {{ delete_form.hidden_tag() }}
-                            <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Weet je zeker dat je dit item wilt verwijderen?')"><i class="fa-solid fa-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p class="empty-state">Deze lijst heeft nog geen items. Voeg hierboven je eerste woord of zin toe!</p>
-{% endif %}
+<footer class="mt-12 pt-6 border-t border-line flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <p class="text-sm text-subtle">Deze lijst niet meer nodig? Verwijderen kan niet ongedaan worden gemaakt.</p>
+    <form method="POST" action="{{ url_for('main.delete_list', list_id=word_list.id) }}" data-confirm="De lijst &quot;{{ word_list.name }}&quot; en al haar items worden definitief verwijderd.">
+        {{ delete_form.hidden_tag() }}
+        <button type="submit" class="btn btn-ghost btn-sm text-muted hover:text-danger">
+            <i class="fa-solid fa-trash-can"></i> Lijst verwijderen
+        </button>
+    </form>
+</footer>
 {% endblock %}

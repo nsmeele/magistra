@@ -1,29 +1,48 @@
 {% extends "base.html" %}
+{% import "_quiz_macros.html" as q with context %}
 
-{% block title %}Quiz Starten - {{ word_list.name }} - Magistra{% endblock %}
+{% block title %}Quiz starten - {{ word_list.name }} - Magistra{% endblock %}
 
 {% block content %}
-<div class="quiz-start">
-    <h2>Quiz Starten: {{ word_list.name }}</h2>
-    <p class="languages">{{ word_list.source_language.name }} → {{ word_list.target_language.name }}</p>
-    <p class="subtitle">Kies de richting waarin je wilt oefenen</p>
+{% set src = word_list.source_language.name %}
+{% set tgt = word_list.target_language.name %}
+<div class="max-w-xl mx-auto lg:max-w-4xl lg:pt-4" data-quiz-start>
+    <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="back-link"><i class="fa-solid fa-arrow-left"></i> {{ word_list.name }}</a>
 
-    <form method="POST" action="{{ url_for('main.quiz_start', list_id=word_list.id) }}" class="form">
+    <header class="mb-8 lg:mb-10">
+        <p class="eyebrow">Nieuwe oefening</p>
+        <h1 class="page-title">{{ word_list.name }}</h1>
+        <div class="flex flex-wrap items-center gap-2 mt-3">
+            <span class="badge badge-primary">{{ src }} <i class="fa-solid fa-arrow-right-arrow-left text-[0.65rem]"></i> {{ tgt }}</span>
+            <span class="badge">{{ word_list.entries|length }} item{% if word_list.entries|length != 1 %}s{% endif %}</span>
+        </div>
+    </header>
+
+    <form method="POST" action="{{ url_for('main.quiz_start', list_id=word_list.id) }}" class="flex flex-col gap-6 lg:gap-8">
         {{ form.hidden_tag() }}
 
-        <div class="form-group">
-            {{ form.direction.label }}
-            {{ form.direction(class="form-control") }}
-            <p class="help-text">
-                <strong>Willekeurig:</strong> Bij elke vraag wordt willekeurig gekozen uit beide richtingen<br>
-                <strong>Brontaal → Doeltaal:</strong> Je krijgt een woord in {{ word_list.source_language.name }} en moet het in {{ word_list.target_language.name }} vertalen<br>
-                <strong>Doeltaal → Brontaal:</strong> Je krijgt een woord in {{ word_list.target_language.name }} en moet het in {{ word_list.source_language.name }} vertalen
-            </p>
+        <div class="flex flex-col gap-3">
+            <h2 class="text-lg">In welke richting wil je oefenen?</h2>
+            {% set descriptions = {
+                'random': 'Elke vraag kiest willekeurig een van beide richtingen.',
+                'forward': 'Je ziet een woord in het ' ~ src ~ ' en typt het ' ~ tgt ~ '.',
+                'reverse': 'Je ziet een woord in het ' ~ tgt ~ ' en typt het ' ~ src ~ '.',
+            } %}
+            {% set options = [] %}
+            {% for value, label in form.direction.choices %}
+                {% set _ = options.append((value, label, descriptions.get(value, ''))) %}
+            {% endfor %}
+            {{ q.direction_choices(options, form.direction.data, columns=True) }}
+            {% if form.direction.errors %}
+                <p class="field-error"><i class="fa-solid fa-circle-exclamation"></i> {{ form.direction.errors[0] }}</p>
+            {% endif %}
         </div>
 
-        <div class="form-actions">
-            <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Terug</a>
-            {{ form.submit(class="btn btn-primary") }}
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end lg:border-t lg:border-line lg:pt-6">
+            <a href="{{ url_for('main.list_detail', list_id=word_list.id) }}" class="btn btn-ghost">Annuleren</a>
+            <button type="submit" name="{{ form.submit.name }}" value="{{ form.submit.label.text }}" class="btn btn-primary btn-lg">
+                <i class="fa-solid fa-play"></i> Start quiz
+            </button>
         </div>
     </form>
 </div>
