@@ -121,7 +121,12 @@ class EntryRepository(BaseRepository):
         return self.model.query.filter_by(list_id=list_id).all()
 
     def create_entry(
-        self, list_id: int, source_word: str, target_word: str, entry_type: str = "word", pronunciation_note: str = None
+        self,
+        list_id: int,
+        source_word: str,
+        target_word: str,
+        entry_type: str = "word",
+        pronunciation_note: str = None,
     ) -> Entry:
         """Create a new entry"""
         return self.create(
@@ -147,8 +152,4 @@ class EntryRepository(BaseRepository):
 
     def get_all_with_list(self) -> ListType[Entry]:
         """Get all entries with their list data, ordered by creation date"""
-        return (
-            self.model.query.join(List)
-            .order_by(self.model.created_at.desc())
-            .all()
-        )
+        return self.model.query.join(List).order_by(self.model.created_at.desc()).all()

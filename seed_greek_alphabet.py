@@ -29,7 +29,11 @@ def seed_greek_alphabet():
             db.session.commit()
 
         # Check if old lists exist and delete them (including related quiz sessions)
-        old_list_names = ["Grieks Alfabet", "Grieks Alfabet - Letters", "Grieks Alfabet - Combinaties"]
+        old_list_names = [
+            "Grieks Alfabet",
+            "Grieks Alfabet - Letters",
+            "Grieks Alfabet - Combinaties",
+        ]
         for list_name in old_list_names:
             existing_list = List.query.filter_by(name=list_name).first()
             if existing_list:
@@ -39,7 +43,7 @@ def seed_greek_alphabet():
                 # We need to delete QuizSessionList entries manually
                 db.session.execute(
                     db.text("DELETE FROM quiz_session_lists WHERE list_id = :list_id"),
-                    {"list_id": existing_list.id}
+                    {"list_id": existing_list.id},
                 )
 
                 # Now we can safely delete the list

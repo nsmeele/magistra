@@ -9,15 +9,21 @@ class NewListForm(FlaskForm):
     """Form voor het aanmaken van een nieuwe lijst"""
 
     name = StringField("Naam", validators=[DataRequired(), Length(min=1, max=100)])
-    source_language_id = SelectField("Brontaal", coerce=int, validators=[DataRequired()])
-    target_language_id = SelectField("Doeltaal", coerce=int, validators=[DataRequired()])
+    source_language_id = SelectField(
+        "Brontaal", coerce=int, validators=[DataRequired()]
+    )
+    target_language_id = SelectField(
+        "Doeltaal", coerce=int, validators=[DataRequired()]
+    )
     category_id = SelectField("Categorie", coerce=int)
     submit = SubmitField("Lijst Aanmaken")
 
     def __init__(self, languages=None, categories=None, *args, **kwargs):
         super(NewListForm, self).__init__(*args, **kwargs)
         if languages:
-            lang_choices = [(0, '- Selecteer -')] + [(lang.id, lang.name) for lang in languages]
+            lang_choices = [(0, "- Selecteer -")] + [
+                (lang.id, lang.name) for lang in languages
+            ]
             self.source_language_id.choices = lang_choices
             self.target_language_id.choices = lang_choices
         else:

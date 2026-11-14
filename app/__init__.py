@@ -19,7 +19,7 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
 
     # Custom Jinja2 filter for safe percentage values
-    @app.template_filter('safe_percent')
+    @app.template_filter("safe_percent")
     def safe_percent_filter(value):
         """Ensure a value is a valid percentage between 0-100"""
         try:
@@ -29,10 +29,11 @@ def create_app(config_class=Config):
             return 0.0
 
     # Custom Jinja2 filter for entry type labels
-    @app.template_filter('entry_type_label')
+    @app.template_filter("entry_type_label")
     def entry_type_label_filter(entry_type_value):
         """Convert entry_type waarde naar Nederlands label"""
         from app.constants import EntryType
+
         return EntryType.get_label(entry_type_value)
 
     # Vite manifest helpers
