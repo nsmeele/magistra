@@ -2,19 +2,21 @@ import pytest
 
 from app import create_app
 from app.models import db
+from config import Config
+
+
+class TestConfig(Config):
+    """Must be applied before db.init_app(): the engine is created there."""
+
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    WTF_CSRF_ENABLED = False
 
 
 @pytest.fixture
 def app():
     """Create and configure a test application instance."""
-    app = create_app()
-    app.config.update(
-        {
-            "TESTING": True,
-            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-            "WTF_CSRF_ENABLED": False,
-        }
-    )
+    app = create_app(TestConfig)
 
     with app.app_context():
         db.create_all()

@@ -1,0 +1,6 @@
+[tool.black]
+extend-exclude = "node_modules|static"
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true

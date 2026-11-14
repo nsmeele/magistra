@@ -1,0 +1,5 @@
+[flake8]
+# Match Black's line length and style
+max-line-length = 88
+extend-ignore = E203, E701
+extend-exclude = node_modules, static

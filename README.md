@@ -1,389 +1,102 @@
 # Magistra
 
-Een woordjes overhoring applicatie gebouwd met Flask en PostgreSQL.
+Magistra tests you on your vocab, no messing about. Bung a list of Latin verbs, Greek letters or English phrases in, then keep typing translations till they're properly drilled in. Get one wrong and it comes back round in the same go, and again later in a dedicated practice round, so there's no wriggling out of it. Every quiz you finish earns you XP, and a daily streak keeps you from skiving off.
 
-## Features
+Under the bonnet it's a Flask app on PostgreSQL, with server-rendered Jinja templates and Tailwind CSS.
 
-- Maak woordenlijsten met bron- en doeltaal
-- Voeg woorden toe aan lijsten
-- Oefen met een interactieve quiz
-  - Bidirectionele quizzes (bron→doel en doel→bron)
-  - Mixed quizzes met meerdere lijsten tegelijk
-  - Foute antwoorden worden herhaald tot je ze goed hebt
-- Houd scores bij (goed/fout per woord)
-
-## Quick Start
-
-```bash
-# 1. Maak virtual environment en installeer dependencies
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# 2. Start database
-docker compose up -d
-
-# 3. Build frontend assets
-docker compose run --rm vite yarn build
-
-# 4. Run migrations
-flask db upgrade
-
-# 5. Start applicatie
-python run.py
-```
-
-Open **http://localhost:5000** in je browser!
-
-## Setup Instructies
-
-### Aanbevolen Setup: PyCharm + Docker Database
-
-Deze setup geeft je de beste development ervaring:
-- ✅ Flask draait lokaal (snelle reload, debugger werkt perfect)
-- ✅ PostgreSQL in Docker (geen lokale PostgreSQL installatie nodig)
-- ✅ PyCharm herkent alles automatisch
-
-#### 1. Python Virtual Environment
-
-```bash
-python3 -m venv venv
-source venv/bin/activate  # Op Windows: venv\Scripts\activate
-pip install -r requirements.txt
-pip install -r requirements-dev.txt  # Voor testing en linting
-```
-
-#### 2. PostgreSQL Database (Docker)
-
-Start de PostgreSQL database met Docker Compose:
-
-```bash
-# Start database (draait op achtergrond)
-docker compose up -d
-
-# Check of database draait
-docker compose ps
-```
-
-**Vereisten:**
-- Docker Desktop geïnstalleerd ([download hier](https://www.docker.com/products/docker-desktop))
-
-**Database credentials** (al geconfigureerd in docker-compose.yml):
-- Database: `magistra`
-- User: `magistra`
-- Password: `magistra`
-- Port: `5432`
-
-#### 3. Environment Configuratie
-
-Een `.env` bestand is al aangemaakt met de juiste configuratie:
-
-```env
-# Flask Configuration
-SECRET_KEY=dev-secret-key-change-in-production
-FLASK_ENV=development
-FLASK_DEBUG=1
-
-# Database Configuration
-DATABASE_URL=postgresql://magistra:magistra@localhost/magistra
-```
-
-Voor productie: verander de `SECRET_KEY`!
-
-#### 4. PyCharm Configuratie
-
-**Python Interpreter instellen:**
-1. Open PyCharm Settings (CMD+, of File → Settings)
-2. Ga naar **Project: magistra → Python Interpreter**
-3. Klik **Add Interpreter → Add Local Interpreter**
-4. Kies **Existing environment**
-5. Selecteer: `venv/bin/python`
-6. Klik **OK**
-
-**Run Configuration maken:**
-1. Klik **Add Configuration** (rechtsboven)
-2. Klik **+** → **Python**
-3. Vul in:
-   - **Name:** `Run Magistra`
-   - **Script path:** `run.py`
-   - **Working directory:** (project root)
-   - **Environment variables:** Vink **Load from .env file** aan
-4. Klik **OK**
-
-Nu kun je de app starten met de ▶️ knop of debuggen met 🐛!
-
-#### 5. Database Migraties
-
-Eerste keer:
-
-```bash
-# Voer migrations uit (creëert de tables)
-flask db upgrade
-```
-
-Later, als je models wijzigt:
-
-```bash
-flask db migrate -m "Beschrijving van wijziging"
-flask db upgrade
-```
-
-**Database recovery** (als je database in een inconsistente staat raakt):
-
-```bash
-# Als Alembic denkt dat migraties zijn uitgevoerd maar tabellen niet bestaan:
-flask db stamp base      # Reset migration tracking (behoudt data)
-flask db upgrade head    # Voer alle migraties uit
-```
-
-⚠️ **Let op:** Gebruik nooit `db.drop_all()` tenzij je bewust alle data wilt verwijderen!
-
-#### 6. (Optioneel) Seed de Database met Voorbeelddata
-
-Om snel te beginnen met oefenen, kun je de database vullen met voorbeeldlijsten:
-
-```bash
-# Seed basis talen (Nederlands, Engels, Latijn, Grieks)
-python seed_languages.py
-
-# Seed Grieks alfabet (25 letters + 16 combinaties)
-python seed_greek_alphabet.py
-
-# Seed 23 Latijnse werkwoorden met volledige vervoegingen (4 tijden)
-python seed_latin_verbs_extended.py
-```
-
-#### 7. Start de Applicatie
-
-**In PyCharm:** Klik op ▶️ **Run 'Run Magistra'**
-
-**Of via terminal:**
-```bash
-python run.py
-```
-
-Ga naar **http://localhost:5000** in je browser.
+Everything runs in Docker, so you don't need Python or Node on your machine. Just Docker, sorted.
 
 ---
 
-### Alternatief: Handmatige PostgreSQL installatie
+## Getting it running
 
-Wil je geen Docker gebruiken? Je kunt ook PostgreSQL lokaal installeren:
-
-**macOS (met Homebrew):**
-```bash
-brew install postgresql@15
-brew services start postgresql@15
-createdb magistra
-```
-
-**Ubuntu/Debian:**
-```bash
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-sudo -u postgres createdb magistra
-```
-
-Update dan je `.env`:
-```env
-DATABASE_URL=postgresql://jouw_username@localhost/magistra
-```
-
-## Project Structuur
-
-De applicatie volgt een volledige OOP architectuur met separation of concerns:
-
-```
-magistra/
-├── app/
-│   ├── __init__.py          # Flask app factory
-│   ├── models.py            # Database models (List, Entry)
-│   ├── repositories.py      # Data access layer (Repository pattern)
-│   ├── services.py          # Business logic layer (Services)
-│   ├── views.py             # Presentation layer (Class-based views)
-│   ├── routes.py            # URL routing configuration
-│   └── forms.py             # WTForms form definitions
-├── templates/               # Jinja2 templates
-│   ├── base.html
-│   ├── index.html
-│   ├── list_detail.html
-│   ├── quiz.html
-│   ├── mixed_quiz.html
-│   └── ...
-├── assets/                  # Frontend source files (Vite input)
-│   ├── main.js              # JavaScript entry point
-│   └── style.css            # CSS source
-├── static/
-│   └── dist/                # Compiled assets (Vite output)
-│       ├── assets/
-│       │   ├── main-*.js
-│       │   └── main-*.css
-│       └── .vite/
-│           └── manifest.json
-├── migrations/              # Database migrations (Alembic)
-├── config.py                # Configuratie
-├── run.py                   # Entry point
-├── vite.config.js           # Vite configuratie
-├── package.json             # Node.js dependencies
-├── docker-compose.yml       # Docker services (DB + Vite)
-├── seed_languages.py        # Seed script voor basis talen
-├── seed_greek_alphabet.py   # Seed script voor Grieks alfabet
-├── seed_latin_verbs_extended.py  # Seed script voor Latijnse werkwoorden
-└── requirements.txt         # Python dependencies
-```
-
-### Architectuur Lagen
-
-1. **Models** (`models.py`): SQLAlchemy ORM models
-2. **Repositories** (`repositories.py`): Database CRUD operaties
-3. **Services** (`services.py`): Business logic en data transformatie
-4. **Views** (`views.py`): Request handling en response rendering
-5. **Routes** (`routes.py`): URL mapping naar views
-
-## Gebruik
-
-1. Maak een nieuwe woordenlijst met bron- en doeltaal
-2. Voeg woorden toe aan de lijst
-3. Klik op "Start Oefening" om te beginnen
-4. Type de vertaling en druk op enter
-5. Bekijk je score na afloop
-
-## Handige Commando's
-
-### Database
-```bash
-docker compose up -d          # Start database
-docker compose down           # Stop database
-docker compose ps             # Check status
-docker compose logs -f db     # Bekijk database logs
-
-# Database seeding
-python seed_languages.py                # Seed basis talen (nl, en, la, el)
-python seed_greek_alphabet.py           # Seed Grieks alfabet (41 entries)
-python seed_latin_verbs_extended.py     # Seed 23 Latijnse werkwoorden (552 vervoegingen)
-```
-
-### Flask
-```bash
-python run.py                 # Start applicatie
-flask run                     # Alternatief: start Flask dev server
-flask db upgrade              # Run migrations
-flask db migrate -m "msg"     # Create migration
-```
-
-### Frontend (Vite)
-```bash
-# Build production assets
-docker compose run --rm vite yarn build
-
-# Development mode (met hot reload)
-docker compose run --rm vite yarn dev
-
-# Install/update dependencies
-docker compose run --rm vite yarn install
-```
-
-**Let op:** Gebruik `docker compose run` in plaats van `docker exec` omdat de Vite container
-niet continu draait. De `--rm` flag verwijdert de container automatisch na gebruik.
-
-### Development Tools
-```bash
-# Code quality
-black .                       # Format code
-isort .                       # Sort imports
-flake8 .                      # Linting
-
-# Testing
-pytest                        # Run tests
-pytest --cov=app              # Run tests met coverage
-pytest -v                     # Verbose output
-```
-
-## Development
-
-De applicatie gebruikt:
-- **Flask** voor de webserver
-- **PostgreSQL** voor data opslag (draait in Docker)
-- **SQLAlchemy** als ORM
-- **Jinja2** voor templates (vergelijkbaar met Twig)
-- **Flask-Migrate** voor database migraties
-- **Vite** voor frontend build (JavaScript/CSS bundling)
-- **Tailwind CSS** voor styling
-- **Font Awesome** voor iconen
-
-### OOP Architectuur
-
-De applicatie volgt object-georiënteerde principes:
-
-**Repository Pattern**: Scheiding tussen business logic en data access
-- `BaseRepository`: Basis CRUD operaties
-- `WordListRepository`: Specifieke queries voor woordenlijsten
-- `WordRepository`: Specifieke queries voor woorden
-
-**Service Layer**: Business logic en orchestration
-- `WordListService`: Beheer van lijsten en woorden
-- `QuizService`: Quiz logica en score tracking
-
-**Class-Based Views**: Gestructureerde request handling
-- Elke view erft van Flask's `MethodView`
-- HTTP methods (GET, POST) als class methods
-- Dependency injection van services via constructor
-
-## CI/CD
-
-Dit project heeft een complete CI/CD pipeline via GitHub Actions:
-
-### Workflows
-
-**CI - Tests en Linting**
-- Automatisch bij elke push en PR
-- Draait code quality checks (Black, isort, Flake8)
-- Voert pytest tests uit met PostgreSQL database
-- Genereert coverage reports
-
-**Docker Build en Push**
-- Bouwt Docker images bij push naar `main`
-- Pusht naar GitHub Container Registry
-- Multi-platform support (AMD64 + ARM64)
-- Automatische tagging (latest, version tags, commit SHA)
-
-**Deployment (template)**
-- Klaar voor deployment naar:
-  - Google Cloud Run
-  - DigitalOcean App Platform
-  - AWS ECS
-  - VPS via SSH
-
-### Lokaal development tests draaien
+**1. Install the frontend packages and build the CSS and JavaScript.**
 
 ```bash
-# Installeer dev dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest
-
-# Run tests met coverage
-pytest --cov=app --cov-report=term-missing
-
-# Code formatting
-black .
-isort .
-
-# Linting
-flake8 .
+docker compose run --rm vite
+docker compose run --rm vite npm run build
 ```
 
-### Docker image van GitHub gebruiken
-
-Na een succesvolle build op `main`:
+**2. Fire up the app.** This builds the image and starts Postgres along with it:
 
 ```bash
-# Pull de latest image
-docker pull ghcr.io/USERNAME/magistra:latest
-
-# Of een specifieke versie
-docker pull ghcr.io/USERNAME/magistra:v1.0.0
+docker compose up -d app
 ```
 
-Zie `.github/workflows/README.md` voor meer details over de CI/CD setup.
+**3. Create the tables.**
+
+```bash
+docker compose run --rm app flask --app run db upgrade
+```
+
+**4. Head over to <http://localhost:5001>.** Code changes reload automatically, because the project folder is mounted into the container.
+
+An empty app's a bit of a damp squib. If you want to crack on with practising straight away, chuck some content in:
+
+```bash
+docker compose run --rm app python seed_languages.py            # run this one first: the others need the languages
+docker compose run --rm app python seed_achievements.py
+docker compose run --rm app python seed_greek_alphabet.py
+docker compose run --rm app python seed_latin_verbs_extended.py
+```
+
+Job's a good 'un.
+
+The database settings are already in `docker-compose.yml`, so you don't need a `.env`. If you do have one, environment variables from Docker take priority over it.
+
+---
+
+## Tinkering with the code
+
+| I want to…                               | Command                                                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------ |
+| run the tests                            | `docker compose run --rm app pytest`                                     |
+| see what the tests don't cover           | `docker compose run --rm app pytest --cov=app --cov-report=term-missing` |
+| format and lint the code                 | `docker compose run --rm app sh -c "black . && isort . && flake8 ."`     |
+| create a migration for a model change    | `docker compose run --rm app flask --app run db migrate -m "what's changing"` |
+| apply that migration                     | `docker compose run --rm app flask --app run db upgrade`                 |
+| rebuild CSS and JS as I go               | `docker compose run --rm vite npm run build -- --watch` |
+| see what the app is moaning about        | `docker compose logs -f app`                                             |
+| pack it all in for the day               | `docker compose down`                                                    |
+
+Worth knowing, so you don't come a cropper:
+
+- **The tests don't need the database.** `tests/conftest.py` runs them on in-memory SQLite. Easy peasy.
+- **Give a migration a once-over before you apply it.** Alembic doesn't catch every change, such as renamed columns or altered enum values, and a dodgy migration's a right faff to undo.
+- **There's no Vite dev server here.** Flask finds the assets through `static/dist/.vite/manifest.json` and never talks to Vite's dev server. Use `build --watch` and refresh the page instead.
+- **Changed `requirements*.txt`?** Rebuild the image with `docker compose build app`.
+- **The database says it's migrated but the tables are missing?** Reset the migration marker and run the migrations again: `docker compose run --rm app sh -c "flask --app run db stamp base && flask --app run db upgrade"`.
+- **Using VS Code?** Install the *Dev Containers* extension and pick **Reopen in Container**. `.devcontainer/devcontainer.json` hooks the editor up to the `app` service, so autocomplete, the debugger and the tests use the container's Python, and Black, isort and flake8 come pre-installed. No local venv needed.
+- **Using PyCharm?** You'll need PyCharm Pro for this one: set the project interpreter to *Docker Compose*, service `app`. The free version can't use Docker interpreters.
+
+### Where everything lives
+
+Say you answer a quiz question. `app/routes.py` maps the URL to a view in `app/views.py`. That view passes the answer to `QuizService` in `app/services.py`. The service checks the answer, saves it through `app/repositories.py`, then updates your XP and streak through `UserStatsService`. That last step can unlock an achievement through `AchievementService`.
+
+So new logic goes in a service, not a view. For new queries, add a repository method.
+
+Also handy:
+
+- `app/models.py` holds all the tables, from lists and entries to quiz sessions and the gamification bits.
+- `app/constants.py` holds the entry types (word, sentence, letter, verb) and their Dutch labels.
+- `templates/` has one template per page. They all extend `base.html`.
+- `assets/` holds the frontend source files. Vite builds them into `static/dist/`, which isn't in git.
+
+---
+
+## Shipping it
+
+The `Dockerfile` has a `dev` stage for local work and a `production` stage that's built by default. The production stage builds the frontend in a Node stage first and bakes everything into the image:
+
+```bash
+docker build -t magistra .
+docker run -p 5001:5001 -e SECRET_KEY=… -e DATABASE_URL=… magistra
+```
+
+GitHub Actions does the graft for you:
+
+- `ci.yml` lints and tests every push and PR to `main` and `develop`.
+- `docker.yml` publishes the production image to GitHub Container Registry on every push to `main`, for amd64 and arm64.
+- `deploy.yml.example` is a starting point for deployment. Copy it to `deploy.yml`; that file's in `.gitignore`.
+
+Cheers!

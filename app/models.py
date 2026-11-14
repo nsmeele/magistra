@@ -1,6 +1,5 @@
-from datetime import datetime
-
 from app import db
+from app.utils import utcnow
 
 
 class Language(db.Model):
@@ -42,7 +41,7 @@ class List(db.Model):
         db.Integer, db.ForeignKey("languages.id"), nullable=False
     )
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
 
     # Je krijgt alsnog twee relaties -> alleen nu aan de goede kant gedefinieerd
     source_language = db.relationship(
@@ -74,7 +73,7 @@ class Entry(db.Model):
     target_word = db.Column(db.String(200), nullable=False)
     pronunciation_note = db.Column(db.String(200), nullable=True)
     entry_type = db.Column(db.String(20), default="word", nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utcnow)
     correct_count = db.Column(db.Integer, default=0)
     incorrect_count = db.Column(db.Integer, default=0)
 
@@ -111,7 +110,7 @@ class QuizSession(db.Model):
     status = db.Column(
         db.String(20), nullable=False, default="in_progress"
     )  # 'in_progress', 'completed', 'abandoned'
-    started_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime, default=utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
     duration_seconds = db.Column(db.Integer, nullable=True)
     quiz_data = db.Column(db.JSON, nullable=True)  # Store quiz questions and state
@@ -166,7 +165,7 @@ class QuizAnswer(db.Model):
     question_direction = db.Column(
         db.String(20), nullable=False
     )  # 'forward' or 'reverse'
-    answered_at = db.Column(db.DateTime, default=datetime.utcnow)
+    answered_at = db.Column(db.DateTime, default=utcnow)
 
     # Relationship to entry
     entry = db.relationship("Entry", backref="quiz_answers")

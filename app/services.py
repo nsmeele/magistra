@@ -1,5 +1,4 @@
 import random
-from datetime import datetime
 from typing import Dict
 from typing import List as ListType
 from typing import Optional, Tuple
@@ -20,6 +19,7 @@ from app.repositories import (
     LanguageRepository,
     ListRepository,
 )
+from app.utils import utcnow
 
 
 class LanguageService:
@@ -394,7 +394,7 @@ class QuizService:
 
         if session_id:
             # Update existing session
-            session = QuizSession.query.get(session_id)
+            session = db.session.get(QuizSession, session_id)
             if session:
                 session.current_index = quiz_data.get("quiz_index", 0)
                 session.correct_answers = quiz_data.get("quiz_score", 0)
@@ -465,15 +465,15 @@ class QuizService:
         Returns:
             Updated QuizSession object
         """
-        session = QuizSession.query.get(session_id)
+        session = db.session.get(QuizSession, session_id)
         if session:
             session.status = "completed"
-            session.completed_at = datetime.utcnow()
+            session.completed_at = utcnow()
             session.correct_answers = final_score
 
             # Calculate duration if we have started_at
             if session.started_at:
-                duration = datetime.utcnow() - session.started_at
+                duration = utcnow() - session.started_at
                 session.duration_seconds = int(duration.total_seconds())
 
             db.session.commit()
@@ -515,8 +515,8 @@ class QuizService:
             correct_answers=quiz_data.get("quiz_score", 0),
             current_index=total,
             status="completed",
-            started_at=datetime.utcnow(),
-            completed_at=datetime.utcnow(),
+            started_at=utcnow(),
+            completed_at=utcnow(),
             quiz_data=quiz_data,
         )
         db.session.add(session)

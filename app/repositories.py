@@ -13,7 +13,7 @@ class BaseRepository:
 
     def get_by_id(self, id: int) -> Optional[object]:
         """Get a single record by ID"""
-        return self.model.query.get(id)
+        return db.session.get(self.model, id)
 
     def get_all(self) -> ListType[object]:
         """Get all records"""

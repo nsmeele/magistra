@@ -6,13 +6,13 @@
 <div class="page-header">
     <h2>Smart Practice - Oefen je moeilijkste woorden</h2>
     <a href="{% if word_list %}{{ url_for('main.list_detail', list_id=word_list.id) }}{% else %}{{ url_for('main.index') }}{% endif %}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left"></i> Terug
+        <i class="fa-solid fa-arrow-left"></i> Terug
     </a>
 </div>
 
-<div class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-8 rounded-lg mb-8">
+<div class="bg-linear-to-br from-indigo-500 to-purple-600 text-white p-8 rounded-lg mb-8">
     <p class="m-0 text-lg leading-relaxed">
-        <i class="fas fa-brain text-xl mr-2"></i>
+        <i class="fa-solid fa-brain text-xl mr-2"></i>
         {% if word_list %}
             Hieronder staan de <strong>{{ entries|length }} moeilijkste woorden</strong> uit "<strong>{{ word_list.name }}</strong>".
         {% else %}
@@ -30,14 +30,14 @@
                 <div class="mb-4">
                     <div class="flex items-center gap-3 mb-3">
                         <span class="text-lg font-semibold">{{ entry.source_word }}</span>
-                        <i class="fas fa-exchange-alt text-gray-500 text-sm"></i>
+                        <i class="fa-solid fa-right-left text-gray-500 text-sm"></i>
                         <span class="text-lg font-semibold">{{ entry.target_word }}</span>
                     </div>
                     {% if entry.success_rate is not none %}
                         <div class="mt-2">
                             <span class="inline-block text-sm font-semibold mb-1">{{ entry.success_rate | safe_percent }}%</span>
                             <div class="h-1.5 bg-gray-200 rounded-sm overflow-hidden">
-                                <div class="h-full bg-gradient-to-r from-red-500 via-orange-500 to-green-500 transition-[width] duration-300" style="width: {{ entry.success_rate | safe_percent }}%"></div>
+                                <div class="h-full bg-linear-to-r from-red-500 via-orange-500 to-green-500 transition-[width] duration-300" style="width: {{ entry.success_rate | safe_percent }}%"></div>
                             </div>
                         </div>
                     {% endif %}
@@ -55,7 +55,7 @@
     <form method="POST">
         <div class="max-w-[400px] mx-auto mb-6">
             <label for="direction" class="block mb-2 font-medium text-gray-800">Kies richting:</label>
-            <select name="direction" id="direction" class="w-full px-3 py-3 border border-gray-300 rounded text-base bg-white focus:outline-none focus:border-blue-500 cursor-pointer">
+            <select name="direction" id="direction" class="w-full px-3 py-3 border border-gray-300 rounded text-base bg-white focus:outline-hidden focus:border-blue-500 cursor-pointer">
                 <option value="random">Willekeurig (beide richtingen)</option>
                 <option value="forward">
                     {% if word_list %}
@@ -74,7 +74,7 @@
             </select>
         </div>
         <button type="submit" class="btn btn-primary btn-large">
-            <i class="fas fa-play"></i> Start Practice Quiz
+            <i class="fa-solid fa-play"></i> Start Practice Quiz
         </button>
     </form>
 </div>

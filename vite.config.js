@@ -1,22 +1,19 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import tailwindcss from "@tailwindcss/vite"
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   root: 'assets',
-  base: '/static/',
-    plugins: [tailwindcss()],
+  base: '/static/dist/',
+  plugins: [tailwindcss()],
   build: {
     outDir: '../static/dist',
     emptyOutDir: true,
     manifest: true,
-    rollupOptions: {
+    rolldownOptions: {
       input: {
-        main: resolve(__dirname, 'assets/main.js')
+        main: resolve(import.meta.dirname, 'assets/main.js')
       }
     }
-  },
-  server: {
-    origin: 'http://localhost:5173'
   }
 });

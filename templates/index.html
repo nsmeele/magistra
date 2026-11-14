@@ -8,7 +8,7 @@
     <div class="header-actions">
         {% if lists|length > 1 %}
             <a href="{{ url_for('main.mixed_quiz') }}" class="btn btn-primary">
-                <i class="fas fa-random"></i> Gemengde Quiz
+                <i class="fa-solid fa-shuffle"></i> Gemengde Quiz
             </a>
         {% endif %}
     </div>
@@ -26,7 +26,7 @@
         </select>
         {% if selected_language %}
             <a href="{{ url_for('main.index') }}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-times"></i> Filter wissen
+                <i class="fa-solid fa-xmark"></i> Filter wissen
             </a>
         {% endif %}
     </form>
@@ -41,9 +41,9 @@
                 <p class="languages">{{ list.source_language.name }} → {{ list.target_language.name }}</p>
                 <p class="word-count">{{ list.entries|length }} item{% if list.entries|length != 1 %}s{% endif %}</p>
                 <div class="card-actions">
-                    <a href="{{ url_for('main.list_detail', list_id=list.id) }}" class="btn btn-secondary"><i class="fas fa-eye"></i> Bekijken</a>
+                    <a href="{{ url_for('main.list_detail', list_id=list.id) }}" class="btn btn-secondary"><i class="fa-solid fa-eye"></i> Bekijken</a>
                     {% if list.entries %}
-                        <a href="{{ url_for('main.quiz', list_id=list.id) }}" class="btn btn-primary"><i class="fas fa-gamepad"></i> Oefenen</a>
+                        <a href="{{ url_for('main.quiz', list_id=list.id) }}" class="btn btn-primary"><i class="fa-solid fa-gamepad"></i> Oefenen</a>
                     {% endif %}
                 </div>
             </div>

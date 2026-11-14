@@ -21,3 +21,11 @@ ENV/
 *.db
 node_modules
 .vite
+.idea
+.devcontainer
+.github
+.pytest_cache
+.coverage
+htmlcov
+tests
+static/dist
